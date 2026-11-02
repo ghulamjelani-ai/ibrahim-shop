@@ -1,0 +1,32 @@
+{
+  "name": "Ibrahim Mobile Traders",
+  "short_name": "Ibrahim Traders",
+  "description": "Shop manager — stock, sales, repairs, customers, suppliers, load.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c7367",
+  "theme_color": "#0c7367",
+  "lang": "ur",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
