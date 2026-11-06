@@ -290,7 +290,7 @@ var STORES=Object.keys(SK).concat(['settings']);
 
 var S={tab:'home',ready:false,storeErr:false,
   inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],settings:{},
-  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:''};
+  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:'',svcFilter:'all'};
 var pendingSlip='';
 
 function $(id){return document.getElementById(id);}
@@ -840,37 +840,60 @@ function loadSummaryCard(){
   return h+'</div>';
 }
 function viewService(){
-  var tt=todayTxns();var comm=sum(tt,function(t){return t.commission;});var todayLoad=sum(tt.filter(function(t){return t.type==='load';}),function(t){return t.amount;});
+  var tt=todayTxns();
+  var tIn=sum(tt.filter(function(t){return t.type==='receive';}),function(t){return t.amount;});
+  var tOut=sum(tt.filter(function(t){return t.type==='send';}),function(t){return t.amount;});
+  var comm=sum(tt,function(t){return t.commission;});
+  var todayLoad=sum(tt.filter(function(t){return t.type==='load';}),function(t){return t.amount;});
   var h='<div class="view">';
-  h+='<div class="vhead"><div><h2>Service</h2><div class="sub">Customer load · Easypaisa · JazzCash</div></div></div>';
-  h+='<div class="tiles">'+tile('a',I.coin,'Aaj Commission',money(comm),tt.length+' lenden')+tile('p',I.cash,'Aaj Customer Load',money(todayLoad),'')+'</div>';
-  h+='<div class="tile full" style="background:var(--blue-soft);border-color:transparent"><div class="lbl" style="color:var(--blue)">'+I.tower+'Mere paas available load</div><div class="val tnum" style="color:var(--blue)">'+money(availableLoad())+' <small>company se liya − becha</small></div></div>';
-  h+='<button class="btn acc block" data-act="newTxn">'+I.plus+' Customer ko Load / Transfer</button>';
+  h+='<div class="vhead"><div><h2>Service</h2><div class="sub">Money transfer · Load · Commission</div></div></div>';
+  h+='<div class="tiles">';
+  h+='<div class="tile" style="background:var(--success-soft);border-color:transparent"><div class="lbl" style="color:var(--success)">'+I.down+'Aaj Receive</div><div class="val tnum" style="color:var(--success)">'+money(tIn)+'</div></div>';
+  h+='<div class="tile" style="background:var(--danger-soft);border-color:transparent"><div class="lbl" style="color:var(--danger)">'+I.up+'Aaj Send</div><div class="val tnum" style="color:var(--danger)">'+money(tOut)+'</div></div>';
+  h+=tile('a',I.coin,'Aaj Commission',money(comm),tt.length+' lenden');
+  h+=tile('p',I.cash,'Aaj Load',money(todayLoad),'');
+  h+='</div>';
+  h+='<div class="btn-row"><button class="btn" style="color:var(--success);border-color:var(--success-soft);background:var(--success-soft)" data-act="txnPreset" data-type="receive">'+I.down+' Receive</button><button class="btn" style="color:var(--danger);border-color:var(--danger-soft);background:var(--danger-soft)" data-act="txnPreset" data-type="send">'+I.up+' Send</button><button class="btn acc" data-act="txnPreset" data-type="load">'+I.phone+' Load</button></div>';
+  if(S.accounts.length){
+    h+='<div class="section-t"><span>Account balance</span><a data-act="go" data-id="accounts">kholein ›</a></div><div class="card pad">';
+    S.accounts.forEach(function(a){h+='<div class="detail-kv"><span class="k">'+esc(a.name)+'</span><span class="v tnum" style="color:'+(acctBalance(a.id)<0?'var(--danger)':'var(--primary-ink)')+'">'+money(acctBalance(a.id))+'</span></div>';});
+    h+='</div>';
+  }
   h+='<div class="section-t"><span>Jaldi Customer Load</span></div><div class="chips">'+NETWORKS.map(function(n){return '<button class="chip" data-act="loadNet" data-id="'+esc(n)+'">'+esc(n)+'</button>';}).join('')+'</div>';
-  h+=loadSummaryCard();
-  h+='<button class="btn block" data-act="go" data-id="loadcos">'+I.tower+' Load Company ka hisaab (paisa/load/baqi)</button>';
+  h+='<button class="btn block" data-act="go" data-id="loadcos">'+I.tower+' Load Company ka hisaab (paisa / load / baqi)</button>';
+  var list=tt.slice().sort(function(a,b){return b.ts-a.ts;});
+  if(S.svcFilter!=='all')list=list.filter(function(t){return t.type===S.svcFilter;});
   h+='<div class="section-t"><span>Aaj ki transactions ('+tt.length+')</span></div>';
-  if(tt.length){h+='<div class="list">';tt.slice().sort(function(a,b){return b.ts-a.ts;}).forEach(function(t){h+=txnRow(t);});h+='</div>';}
-  else h+=empty(I.coin,'Aaj koi lenden nahi','Easyload ya money transfer add karte hi yahan aa jayega.');
+  h+='<div class="chips">';[['all','Sab'],['receive','Receive'],['send','Send'],['load','Load']].forEach(function(x){h+='<button class="chip'+(S.svcFilter===x[0]?' on':'')+'" data-act="svcFilter" data-id="'+x[0]+'">'+x[1]+'</button>';});h+='</div>';
+  if(list.length){h+='<div class="list">';list.forEach(function(t){h+=txnRow(t);});h+='</div>';}
+  else h+=empty(I.coin,'Koi transaction nahi','Upar se Receive / Send / Load karte hi yahan aa jayega — customer, account aur time ke sath.');
+  h+='<div class="section-t"><span>Available load</span></div>';
+  h+='<div class="tile full" style="background:var(--blue-soft);border-color:transparent"><div class="lbl" style="color:var(--blue)">'+I.tower+'Mere paas available load</div><div class="val tnum" style="color:var(--blue)">'+money(availableLoad())+' <small>company se liya − customers ko becha</small></div></div>';
+  h+=loadSummaryCard();
   h+='</div>';return h;
 }
 function txnRow(t){
-  var ty=t.type==='send'?{l:'Send',i:I.up}:t.type==='receive'?{l:'Receive',i:I.down}:{l:'Load',i:I.phone};
-  return '<button class="row tap" data-act="openTxn" data-id="'+t.id+'"><div class="avatar">'+ty.i+'</div><div class="main"><div class="ttl">'+esc(t.service)+' · '+ty.l+'</div><div class="meta">'+clockTime(t.ts)+(t.phone?' · '+esc(t.phone):'')+'</div></div><div class="right"><div class="price tnum">'+money(t.amount)+'</div><div class="meta tnum" style="color:var(--accent)">+'+money(t.commission)+' comm</div></div></button>';
+  var m=t.type==='send'?{l:'Send',i:I.up,c:'var(--danger)',sign:'−'}:t.type==='receive'?{l:'Receive',i:I.down,c:'var(--success)',sign:'+'}:{l:'Load',i:I.phone,c:'var(--blue)',sign:''};
+  var acc=t.acctId?findAcct(t.acctId):null;
+  var who=t.custName?esc(t.custName)+' · '+m.l:esc(t.service||'')+' · '+m.l;
+  var sub=[clockTime(t.ts)];if(acc)sub.push(esc(acc.name));else if(t.custName&&t.service)sub.push(esc(t.service));if(t.phone)sub.push(esc(t.phone));
+  return '<button class="row tap" data-act="openTxn" data-id="'+t.id+'"><div class="avatar" style="background:transparent;border:1px solid var(--border);color:'+m.c+'">'+m.i+'</div><div class="main"><div class="ttl">'+who+'</div><div class="meta">'+sub.join(' · ')+'</div></div><div class="right"><div class="price tnum" style="color:'+m.c+'">'+m.sign+money(t.amount)+'</div>'+(Number(t.commission)>0?'<div class="meta tnum" style="color:var(--accent)">+'+money(t.commission)+' comm</div>':'')+'</div></button>';
 }
 function txnForm(t){
-  t=t||{};txnType=t.type||'send';txnSvc=t.service&&getSvcs().indexOf(t.service)>-1?t.service:getSvcs()[0];txnNet=t.network||(t.type==='load'&&t.service?t.service:'Jazz');
+  t=t||{};txnType=t.type||'receive';txnSvc=t.service&&getSvcs().indexOf(t.service)>-1?t.service:getSvcs()[0];txnNet=t.network||(t.type==='load'&&t.service?t.service:'Jazz');
   var svcBtns=getSvcs().map(function(s){return '<button class="'+(txnSvc===s?'on':'')+'" data-svc="'+esc(s)+'">'+esc(s)+'</button>';}).join('');
   var netBtns=NETWORKS.map(function(s){return '<button class="'+(txnNet===s?'on':'')+'" data-net="'+esc(s)+'">'+esc(s)+'</button>';}).join('');
   var isLoad=txnType==='load';
-  return '<div class="field"><label>Kya karna hai</label><div class="seg acc" id="typeSeg">'+['send','receive','load'].map(function(k){var l=k==='send'?'Send/Bheja':k==='receive'?'Receive/Aaya':'Load/Balance';return '<button class="'+(txnType===k?'on':'')+'" data-type="'+k+'">'+l+'</button>';}).join('')+'</div></div>'+
+  return '<div class="field"><label>Kya hua?</label><div class="seg acc" id="typeSeg">'+['receive','send','load'].map(function(k){var l=k==='receive'?'Receive (aaya)':k==='send'?'Send (bheja)':'Load';return '<button class="'+(txnType===k?'on':'')+'" data-type="'+k+'">'+l+'</button>';}).join('')+'</div></div>'+
     '<div class="field" id="netField"'+(isLoad?'':' hidden')+'><label>Network</label><div class="seg" id="netSeg">'+netBtns+'</div></div>'+
     '<div class="field" id="svcField"'+(isLoad?' hidden':'')+'><label>Service</label><div class="seg" id="svcSeg">'+svcBtns+'</div></div>'+
+    (S.accounts.length?'<div class="field" id="acctField"'+(isLoad?' hidden':'')+'><label>Kaunse account se</label><select id="t_acct"><option value="">— koi account nahi —</option>'+S.accounts.map(function(ac){return '<option value="'+ac.id+'"'+(t.acctId===ac.id?' selected':'')+'>'+esc(ac.name)+'</option>';}).join('')+'</select></div>':'')+
     '<div class="two"><div class="field"><label>Amount Rs *</label><input id="t_amt" type="number" inputmode="numeric" value="'+(t.amount!=null?t.amount:'')+'" placeholder="0" autofocus></div>'+
     '<div class="field"><label>Commission Rs</label><input id="t_comm" type="number" inputmode="numeric" value="'+(t.commission!=null?t.commission:'')+'" placeholder="0"></div></div>'+
-    (S.accounts.length?'<div class="field" id="acctField"'+(isLoad?' hidden':'')+'><label>Account (optional)</label><select id="t_acct"><option value="">— koi nahi —</option>'+S.accounts.map(function(ac){return '<option value="'+ac.id+'"'+(t.acctId===ac.id?' selected':'')+'>'+esc(ac.name)+'</option>';}).join('')+'</select></div>':'')+
-    '<div class="field"><label>Phone / Account (optional)</label><input id="t_phone" type="tel" inputmode="tel" value="'+esc(t.phone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
-    '<button class="btn acc block" data-act="saveTxn" data-id="'+(t.id||'')+'">'+I.check+' '+(t.id?'Update':'Save karein')+'</button>'+
+    '<div class="field"><label>Customer naam (optional)</label><input id="t_cust" value="'+esc(t.custName||'')+'" placeholder="kis se / kis ko"></div>'+
+    '<div class="field"><label>Customer number (optional)</label><input id="t_phone" type="tel" inputmode="tel" value="'+esc(t.phone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
+    '<p class="hint">Date aur time khud save ho jayega.</p>'+
+    '<button class="btn pri block" data-act="saveTxn" data-id="'+(t.id||'')+'">'+I.check+' '+(t.id?'Update karein':'Save karein')+'</button>'+
     (t.id?'<button class="btn danger block" data-act="delTxn" data-id="'+t.id+'">'+I.trash+' Delete</button>':'');
 }
 function segPick(seg,btn){[].forEach.call(seg.children,function(x){x.classList.toggle('on',x===btn);});}
@@ -882,9 +905,9 @@ function openTxnForm(t){sheet(t&&t.id?'Transaction edit':'Nai Transaction',txnFo
 function saveTxn(id){
   var amt=Number($('t_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
   var old=id?findTxn(id):null;var isLoad=txnType==='load';
-  var ae=$('t_acct');
-  var obj={id:id||uid(),service:isLoad?txnNet:txnSvc,network:isLoad?txnNet:'',type:txnType,amount:amt,commission:Math.max(0,Number($('t_comm').value)||0),phone:$('t_phone').value.trim(),acctId:(!isLoad&&ae)?ae.value:'',ts:old?old.ts:Date.now()};
-  save('txns',obj).then(function(){closeSheet();toast(id?'Update ho gaya':'Save ho gaya','good');render();});
+  var ae=$('t_acct');var ce=$('t_cust');var phone=$('t_phone').value.trim();
+  var obj={id:id||uid(),service:isLoad?txnNet:txnSvc,network:isLoad?txnNet:'',type:txnType,amount:amt,commission:Math.max(0,Number($('t_comm').value)||0),custName:ce?ce.value.trim():'',phone:phone,acctId:(!isLoad&&ae)?ae.value:'',ts:old?old.ts:Date.now()};
+  save('txns',obj).then(function(){if(phone)upsertCustomer(obj.custName,phone);closeSheet();toast(id?'Update ho gaya':'Save ho gaya','good');render();});
 }
 function openTxn(id){var t=findTxn(id);if(t)openTxnForm(t);}
 
@@ -1210,6 +1233,8 @@ document.addEventListener('click',function(e){
     case 'rfil': S.repFilter=id;render();break;
     case 'delRep': confirmSheet('Repair delete?','Ye kaam record delete ho jayega.','Haan, delete',function(){removeDoc('repairs',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
     case 'newTxn': openTxnForm(null);break;
+    case 'txnPreset': openTxnForm({type:a.getAttribute('data-type')});break;
+    case 'svcFilter': S.svcFilter=id;render();break;
     case 'loadNet': openTxnForm({type:'load',network:id});break;
     case 'openTxn': openTxn(id);break;
     case 'saveTxn': saveTxn(id);break;
