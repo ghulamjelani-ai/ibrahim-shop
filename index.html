@@ -232,7 +232,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-left:max(16
 
 <nav class="nav"><div class="nav-in" id="navIn">
   <button data-tab="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Home</span></button>
-  <button data-tab="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Stock</span></button>
+  <button data-tab="panels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Panels</span></button>
   <button data-tab="sale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.2 12.3a1 1 0 0 0 1 .7h8.5a1 1 0 0 0 1-.8L21 7H6"/></svg><span>Sale</span></button>
   <button data-tab="repair"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a3.5 3.5 0 0 0-4.8 4.3l-6 6a2 2 0 0 0 2.8 2.8l6-6a3.5 3.5 0 0 0 4.3-4.8l-2 2-2-2 1.7-2.3Z"/></svg><span>Repair</span></button>
   <button data-tab="service"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v12H4z"/><path d="M4 10h16"/><path d="M8 15h3"/></svg><span>Service</span></button>
@@ -274,19 +274,23 @@ var I={
   save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
-  chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
+  chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5h-5a2 2 0 0 1 0-4h5"/><circle cx="16" cy="12" r="1"/></svg>'
 };
 
 var DEF_CATS=['Glass/Cover','Charger/Cable','Panel/Screen','Handsfree','Battery','Mobile Set','SIM/Memory','Accessories','Other'];
 var DEF_SVCS=['Easypaisa','JazzCash','UPaisa','Bank','Other'];
 var NETWORKS=['Jazz','Zong','Ufone','Telenor','Other'];
+var BRANDS=['Samsung','Infinix','Tecno','Vivo','Oppo','Xiaomi/Redmi','Realme','itel','QMobile','Nokia','Apple','Other'];
+var PANEL_KINDS=['Panel/LCD','Touch/Glass','Folder/Housing','Battery','Combo','Other'];
 /* store name -> state key */
-var SK={inventory:'inv',sales:'sales',repairs:'repairs',customers:'customers',txns:'txns',suppliers:'suppliers',supplierTx:'supplierTx',loadCos:'loadCos',loadTx:'loadTx'};
+var SK={inventory:'inv',sales:'sales',repairs:'repairs',customers:'customers',txns:'txns',suppliers:'suppliers',supplierTx:'supplierTx',loadCos:'loadCos',loadTx:'loadTx',panels:'panels',accounts:'accounts',acctTx:'acctTx',udhaar:'udhaar',udhaarTx:'udhaarTx'};
 var STORES=Object.keys(SK).concat(['settings']);
 
 var S={tab:'home',ready:false,storeErr:false,
-  inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],settings:{},
-  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today'};
+  inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],settings:{},
+  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all'};
 var pendingSlip='';
 
 function $(id){return document.getElementById(id);}
@@ -316,7 +320,7 @@ $('scrim').onclick=closeSheet;$('sheetX').onclick=closeSheet;$('menuBtn').onclic
 var DB=null,USE_IDB=false;
 function openDB(){return new Promise(function(res,rej){
   if(!window.indexedDB){rej();return;}
-  var r;try{r=indexedDB.open('ibrahimShop',1);}catch(e){rej();return;}
+  var r;try{r=indexedDB.open('ibrahimShop',2);}catch(e){rej();return;}
   r.onupgradeneeded=function(e){var db=e.target.result;STORES.forEach(function(s){if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:'id'});});};
   r.onsuccess=function(e){DB=e.target.result;res();};
   r.onerror=function(){rej();};
@@ -394,24 +398,27 @@ function coPendingTotal(){return sum(S.loadCos,function(c){var b=coBalance(c.id)
 /* ===== RENDER ===== */
 function render(){
   var nav=$('navIn');[].forEach.call(nav.children,function(b){b.classList.toggle('on',b.getAttribute('data-tab')===S.tab);});
-  updateBadge('stock',lowStock().length);updateBadge('repair',pendingRepairs().length);
+  updateBadge('repair',pendingRepairs().length);updateBadge('panels',S.panels.filter(function(p){return Number(p.qty)<=0;}).length);
   var v=$('view');
   if(!S.ready){v.innerHTML='<div class="center-load"><div class="spin"></div><div>App taiyar ho rahi hai…</div></div>';return;}
-  var map={home:viewHome,stock:viewStock,sale:viewSale,repair:viewRepair,service:viewService,customers:viewCustomers,suppliers:viewSuppliers,loadcos:viewLoadCos,reports:viewReports,settings:viewSettings};
+  var map={home:viewHome,stock:viewStock,panels:viewPanels,sale:viewSale,repair:viewRepair,service:viewService,customers:viewCustomers,suppliers:viewSuppliers,loadcos:viewLoadCos,accounts:viewAccounts,udhaar:viewUdhaar,reports:viewReports,settings:viewSettings};
   v.innerHTML=(map[S.tab]||viewHome)();
 }
 function updateBadge(tab,n){var btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(!btn)return;var b=btn.querySelector('.badge');if(n>0){if(!b){b=document.createElement('span');b.className='badge';btn.appendChild(b);}b.textContent=n>99?'99+':n;}else if(b)b.remove();}
-function goTab(t){S.tab=t;S.stockQ='';S.custQ='';render();var m=document.querySelector('main');if(m)m.scrollTop=0;}
+function goTab(t){S.tab=t;S.stockQ='';S.custQ='';S.panelQ='';render();var m=document.querySelector('main');if(m)m.scrollTop=0;}
 function subHead(title){return '<button class="back" data-act="go" data-id="home">'+I.chevL+' Home</button><div class="vhead"><div><h2>'+esc(title)+'</h2></div></div>';}
 function empty(ic,title,msg){return '<div class="empty"><div class="ic">'+ic+'</div><b>'+esc(title)+'</b><p>'+esc(msg)+'</p></div>';}
 function tile(cls,ic,lbl,val,sub){return '<div class="tile '+cls+'"><div class="lbl">'+ic+esc(lbl)+'</div><div class="val tnum">'+(typeof val==='number'?num(val):esc(val))+(sub?' <small>'+esc(sub)+'</small>':'')+'</div></div>';}
 
 function openMore(){
-  var b='<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers (Khata)</b><span>Naam, number aur repair history</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="suppliers"><div class="mi">'+I.truck+'</div><div><b>Supplier (Dena hai)</b><span>Jin se maal liya — baqi & slips</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="loadcos"><div class="mi">'+I.tower+'</div><div><b>Load Company</b><span>Paisa diya, load aaya, total balance</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="reports"><div class="mi">'+I.chart+'</div><div><b>Reports (Hisaab)</b><span>Aaj, mahina ya sab ka hisaab</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="settings"><div class="mi">'+I.gear+'</div><div><b>Settings & Backup</b><span>Shop, categories, data backup</span></div></button>';
+  var b='<button class="menu-item" data-act="go" data-id="stock"><div class="mi">'+I.box+'</div><div><b>Stock — Accessories</b><span>Maal ki quantity, location aur rate</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers</b><span>Naam, number aur repair history</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="udhaar"><div class="mi">'+I.coin+'</div><div><b>Udhaar Khata</b><span>Kis se lena ya dena — slip ke sath</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="accounts"><div class="mi">'+I.wallet+'</div><div><b>Accounts</b><span>Har account alag — JazzCash, Easypaisa</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="suppliers"><div class="mi">'+I.truck+'</div><div><b>Supplier — Dena hai</b><span>Jin se maal liya, unka baqi aur slip</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="loadcos"><div class="mi">'+I.tower+'</div><div><b>Load Company / Rep</b><span>Representative aata hai — paisa, load, baqi</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="reports"><div class="mi">'+I.chart+'</div><div><b>Reports — Hisaab</b><span>Aaj, is mahine ya poora hisaab</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="settings"><div class="mi">'+I.gear+'</div><div><b>Settings aur Backup</b><span>Shop profile, categories aur data backup</span></div></button>';
   sheet('Menu',b,function(root){root.querySelectorAll('.menu-item').forEach(function(el){el.addEventListener('click',closeSheet);});});
 }
 
@@ -433,8 +440,11 @@ function viewHome(){
   if(coPend.length){
     h+='<div class="banner b">'+I.tower+'<div>Load company se lena baqi: <b>'+money(coPendingTotal())+'</b>. '+coPend.map(function(c){return esc(c.name);}).join(', ')+' — <a data-act="go" data-id="loadcos">kholein</a></div></div>';
   }
-  h+='<div class="btn-row"><button class="btn pri" data-act="go" data-id="sale">'+I.cart+' Nai Bikri</button><button class="btn acc" data-act="go" data-id="service">'+I.coin+' Load/Transfer</button></div>';
-  h+='<div class="btn-row"><button class="btn" data-act="go" data-id="customers">'+I.users+' Customers</button><button class="btn" data-act="go" data-id="suppliers">'+I.truck+' Supplier</button></div>';
+  var udLena=totalUdhaarDue(),supDena=totalSupDue();
+  if(udLena>0||supDena>0){h+='<div class="tiles">'+tile('',I.coin,'Lena hai',money(udLena),'logon se')+tile('',I.truck,'Dena hai',money(supDena),'supplier ko')+'</div>';}
+  h+='<div class="btn-row"><button class="btn pri" data-act="go" data-id="sale">'+I.cart+' Nai Bikri</button><button class="btn acc" data-act="go" data-id="service">'+I.coin+' Load / Transfer</button></div>';
+  h+='<div class="btn-row"><button class="btn" data-act="go" data-id="panels">'+I.grid+' Model dhoondein</button><button class="btn" data-act="go" data-id="stock">'+I.box+' Stock</button></div>';
+  h+='<div class="btn-row"><button class="btn" data-act="go" data-id="customers">'+I.users+' Customers</button><button class="btn" data-act="go" data-id="udhaar">'+I.coin+' Udhaar Khata</button></div>';
   if(low.length){
     h+='<div class="section-t"><span>Low stock — jaldi mangwayein</span></div><div class="list">';
     low.slice(0,5).forEach(function(i){h+='<button class="row tap" data-act="editItem" data-id="'+i.id+'"><div class="main"><div class="ttl">'+esc(i.name)+'</div><div class="meta"><span class="pill loc">'+I.pin+esc(i.loc||'—')+'</span></div></div><div class="right"><div class="qty-big" style="color:var(--danger)">'+num(i.qty)+' <small>baqi</small></div></div></button>';});
@@ -457,6 +467,176 @@ function actRow(a){
   var ic=a.type==='sale'?I.cart:a.type==='txn'?I.coin:I.wrench;
   var right=a.type==='txn'?('<div class="price" style="color:var(--accent)">+'+money(a.comm)+'</div><div class="meta tnum">'+money(a.amt)+'</div>'):('<div class="price">'+money(a.amt)+'</div>');
   return '<div class="row"><div class="avatar">'+ic+'</div><div class="main"><div class="ttl">'+esc(a.title)+'</div><div class="meta">'+clockTime(a.ts)+'</div></div><div class="right">'+right+'</div></div>';
+}
+
+/* ===== extra finders + derived (panels, accounts, udhaar) ===== */
+function findPanel(id){return S.panels[idxOf(S.panels,id)]||null;}
+function findAcct(id){return S.accounts[idxOf(S.accounts,id)]||null;}
+function findUd(id){return S.udhaar[idxOf(S.udhaar,id)]||null;}
+function acctBalance(aid){
+  var ac=findAcct(aid);if(!ac)return 0;
+  var open=Number(ac.opening)||0;
+  var man=sum(S.acctTx.filter(function(t){return t.acctId===aid;}),function(t){return t.dir==='in'?Number(t.amount):-Number(t.amount);});
+  var tr=sum(S.txns.filter(function(t){return t.acctId===aid;}),function(t){return t.type==='receive'?Number(t.amount):(t.type==='send'?-Number(t.amount):0);});
+  return open+man+tr;
+}
+function totalAcct(){return sum(S.accounts,function(a){return acctBalance(a.id);});}
+function acctLedger(aid){
+  var rows=[];
+  S.acctTx.filter(function(t){return t.acctId===aid;}).forEach(function(t){rows.push({ts:t.ts,label:t.dir==='in'?'Cash daala':'Cash nikala',delta:t.dir==='in'?Number(t.amount):-Number(t.amount),note:t.note,kind:'acctTx',id:t.id});});
+  S.txns.filter(function(t){return t.acctId===aid&&(t.type==='send'||t.type==='receive');}).forEach(function(t){rows.push({ts:t.ts,label:(t.service||'Transfer')+' '+(t.type==='send'?'Send':'Receive'),delta:t.type==='receive'?Number(t.amount):-Number(t.amount),note:t.phone,kind:'txn',id:t.id});});
+  rows.sort(function(a,b){return b.ts-a.ts;});return rows;
+}
+function udBalance(pid){var tx=S.udhaarTx.filter(function(t){return t.pid===pid;});return sum(tx.filter(function(t){return t.type==='gave';}),function(t){return t.amount;})-sum(tx.filter(function(t){return t.type==='got';}),function(t){return t.amount;});}
+function totalUdhaarDue(){return sum(S.udhaar,function(p){var b=udBalance(p.id);return b>0?b:0;});}
+
+/* ---- MODELS / PANELS (search-first) ---- */
+function viewPanels(){
+  var list=S.panels.slice().sort(function(a,b){return (a.model||'').localeCompare(b.model||'');});
+  if(S.panelBrand!=='all')list=list.filter(function(p){return p.brand===S.panelBrand;});
+  if(S.panelQ){var q=S.panelQ.toLowerCase();list=list.filter(function(p){return (p.model||'').toLowerCase().indexOf(q)>-1||(p.brand||'').toLowerCase().indexOf(q)>-1||(p.loc||'').toLowerCase().indexOf(q)>-1;});}
+  var h='<div class="view">';
+  h+='<div class="vhead"><div><h2>Models / Panels</h2><div class="sub">'+S.panels.length+' model · search kar ke available dekhein</div></div><button class="btn pri sm" data-act="newPanel">'+I.plus+' Naya</button></div>';
+  h+='<div class="search">'+I.search+'<input id="panelSearch" placeholder="Model likhein… jaise A12, Redmi 9" value="'+esc(S.panelQ)+'"></div>';
+  h+='<div class="chips"><button class="chip'+(S.panelBrand==='all'?' on':'')+'" data-act="pbrand" data-id="all">Sab</button>';
+  BRANDS.forEach(function(b){h+='<button class="chip'+(S.panelBrand===b?' on':'')+'" data-act="pbrand" data-id="'+esc(b)+'">'+esc(b)+'</button>';});
+  h+='</div>';
+  if(!S.panels.length){h+=empty(I.grid,'Abhi koi model nahi','Apne panels aur models add karein — model, brand, location aur quantity. Phir search karte hi pata chal jayega ke maujood hai ya nahi, aur kahan rakha hai.')+'<button class="btn pri block" data-act="newPanel">'+I.plus+' Pehla model add karein</button>';}
+  else if(!list.length){h+=empty(I.search,'"'+esc(S.panelQ)+'" nahi mila','Ye model stock mein nahi hai — ya koi aur naam try karein.');}
+  else{h+='<div class="hint" style="margin:2px">'+list.length+' model mila</div><div class="list">';list.forEach(function(p){h+=panelRow(p);});h+='</div>';}
+  h+='</div>';return h;
+}
+function panelRow(p){
+  var out=Number(p.qty)<=0;
+  var av=p.photo?'<div class="avatar"><img src="'+p.photo+'" alt=""></div>':'<div class="avatar">'+I.grid+'</div>';
+  return '<button class="row tap" data-act="editPanel" data-id="'+p.id+'">'+av+'<div class="main"><div class="ttl">'+esc(p.model)+'</div><div class="meta">'+(p.brand?'<span class="pill">'+esc(p.brand)+'</span>':'')+(p.kind?'<span class="pill">'+esc(p.kind)+'</span>':'')+'<span class="pill loc">'+I.pin+esc(p.loc||'location nahi')+'</span></div></div><div class="right"><span class="pill '+(out?'danger':'ok')+'">'+(out?'Khatam':'Maujood · '+num(p.qty))+'</span>'+(p.price?'<div class="price tnum">'+money(p.price)+'</div>':'')+'</div></button>';
+}
+function panelForm(p){
+  p=p||{};pendingSlip=p.photo||'';
+  var bo=BRANDS.map(function(b){return '<option'+(p.brand===b?' selected':'')+'>'+esc(b)+'</option>';}).join('');
+  var ko=PANEL_KINDS.map(function(k){return '<option'+(p.kind===k?' selected':'')+'>'+esc(k)+'</option>';}).join('');
+  return '<div class="field"><label>Model * (jaise Samsung A12)</label><input id="p_model" value="'+esc(p.model||'')+'" placeholder="Model ya set ka naam"></div>'+
+    '<div class="two"><div class="field"><label>Brand</label><select id="p_brand">'+bo+'</select></div><div class="field"><label>Kism</label><select id="p_kind">'+ko+'</select></div></div>'+
+    '<div class="two"><div class="field"><label>Location (rack/box) *</label><input id="p_loc" value="'+esc(p.loc||'')+'" placeholder="jaise Rack B-2"></div><div class="field"><label>Quantity</label><input id="p_qty" type="number" inputmode="numeric" value="'+(p.qty!=null?p.qty:'')+'" placeholder="0"></div></div>'+
+    '<div class="two"><div class="field"><label>Kharid Rs</label><input id="p_cost" type="number" inputmode="numeric" value="'+(p.cost!=null?p.cost:'')+'" placeholder="0"></div><div class="field"><label>Bikri Rate Rs</label><input id="p_price" type="number" inputmode="numeric" value="'+(p.price!=null?p.price:'')+'" placeholder="0"></div></div>'+
+    '<div class="field"><label>Note</label><input id="p_note" value="'+esc(p.note||'')+'" placeholder="koi baat…"></div>'+
+    photoField('Photo (optional)')+
+    '<button class="btn pri block" data-act="savePanel" data-id="'+(p.id||'')+'">'+I.check+' '+(p.id?'Update karein':'Add karein')+'</button>'+
+    (p.id?'<button class="btn danger block" data-act="delPanel" data-id="'+p.id+'">'+I.trash+' Delete karein</button>':'');
+}
+function openPanelForm(p){sheet(p?'Model edit karein':'Naya Model / Panel',panelForm(p));}
+function savePanel(id){
+  var model=$('p_model').value.trim();if(!model){toast('Model likhein','err');return;}
+  var loc=$('p_loc').value.trim();if(!loc){toast('Location likhein','err');return;}
+  var old=id?findPanel(id):null;
+  var obj={id:id||uid(),model:model,brand:$('p_brand').value,kind:$('p_kind').value,loc:loc,qty:Math.max(0,Math.floor(Number($('p_qty').value)||0)),cost:Math.max(0,Number($('p_cost').value)||0),price:Math.max(0,Number($('p_price').value)||0),note:$('p_note').value.trim(),photo:pendingSlip||'',ts:old?old.ts:Date.now()};
+  save('panels',obj).then(function(){closeSheet();toast(id?'Update ho gaya':'Add ho gaya','good');render();});
+}
+
+/* ---- ACCOUNTS (JazzCash / Easypaisa — each separate) ---- */
+function viewAccounts(){
+  var h='<div class="view">'+subHead('Accounts');
+  h+='<div class="tile full" style="margin-top:-4px"><div class="lbl">'+I.wallet+'Sab accounts ka total balance</div><div class="val tnum" style="color:var(--primary-ink)">'+money(totalAcct())+'</div></div>';
+  h+='<button class="btn pri block sm" data-act="newAcct">'+I.plus+' Naya account (JazzCash, Easypaisa…)</button>';
+  if(!S.accounts.length){h+=empty(I.wallet,'Koi account nahi','Har account alag add karein — JazzCash, Easypaisa waghera. Transfer karte waqt account chun lein, balance khud update hota rahega.');}
+  else{h+='<div class="list">';S.accounts.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).forEach(function(a){var bal=acctBalance(a.id);h+='<button class="row tap" data-act="openAcct" data-id="'+a.id+'"><div class="avatar">'+I.wallet+'</div><div class="main"><div class="ttl">'+esc(a.name)+'</div><div class="meta">'+(a.service?'<span class="pill">'+esc(a.service)+'</span>':'')+'</div></div><div class="right"><div class="price tnum" style="color:'+(bal<0?'var(--danger)':'var(--primary-ink)')+'">'+money(bal)+'</div><div class="meta">balance</div></div></button>';});h+='</div>';}
+  h+='</div>';return h;
+}
+function acctForm(a){
+  a=a||{};
+  var so=getSvcs().map(function(s){return '<option'+(a.service===s?' selected':'')+'>'+esc(s)+'</option>';}).join('');
+  return '<div class="field"><label>Account ka naam *</label><input id="a_name" value="'+esc(a.name||'')+'" placeholder="jaise JazzCash – 0300xxxxxxx"></div>'+
+    '<div class="field"><label>Service</label><select id="a_svc">'+so+'</select></div>'+
+    '<div class="field"><label>Abhi is account mein kitna hai (Rs)</label><input id="a_open" type="number" inputmode="numeric" value="'+(a.opening!=null?a.opening:'')+'" placeholder="0"'+(a.id?' readonly':'')+'></div>'+
+    (a.id?'<p class="hint">Balance badalne ke liye account ke andar "Cash daala / nikala" use karein.</p>':'')+
+    '<div class="field"><label>Note</label><input id="a_note" value="'+esc(a.note||'')+'" placeholder="koi baat…"></div>'+
+    '<button class="btn pri block" data-act="saveAcct" data-id="'+(a.id||'')+'">'+I.check+' '+(a.id?'Update karein':'Add karein')+'</button>'+
+    (a.id?'<button class="btn danger block" data-act="delAcct" data-id="'+a.id+'">'+I.trash+' Account delete</button>':'');
+}
+function saveAcct(id){
+  var name=$('a_name').value.trim();if(!name){toast('Naam likhein','err');return;}
+  var old=id?findAcct(id):null;
+  var obj={id:id||uid(),name:name,service:$('a_svc').value,opening:old?old.opening:Math.max(0,Number($('a_open').value)||0),note:$('a_note').value.trim(),ts:old?old.ts:Date.now()};
+  save('accounts',obj).then(function(){closeSheet();S.tab='accounts';toast(id?'Update ho gaya':'Account add','good');render();});
+}
+function openAcct(id){
+  var a=findAcct(id);if(!a)return;var rows=acctLedger(id);
+  var b='<div class="card pad">';
+  b+='<div class="detail-kv"><span class="k">Service</span><span class="v">'+esc(a.service||'—')+'</span></div>';
+  b+='<div class="detail-kv"><span class="k">Shuru ka balance</span><span class="v tnum">'+money(a.opening||0)+'</span></div>';
+  b+='<div class="detail-kv"><span class="k"><b>Abhi balance</b></span><span class="v tnum" style="color:var(--primary-ink)">'+money(acctBalance(id))+'</span></div>';
+  if(a.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(a.note)+'</span></div>';
+  b+='</div>';
+  b+='<div class="btn-row"><button class="btn pri block" data-act="acctIn" data-id="'+id+'">'+I.down+' Cash daala</button><button class="btn block" data-act="acctOut" data-id="'+id+'">'+I.up+' Cash nikala</button></div>';
+  b+='<div class="section-t"><span>Is account ka hisaab</span></div>';
+  if(rows.length){b+='<div class="card pad">';rows.forEach(function(r){b+='<div class="ledger"><div class="lmain"><b>'+esc(r.label)+'</b><span>'+dateStr(r.ts)+(r.note?' · '+esc(r.note):'')+'</span></div><div class="lamt" style="color:'+(r.delta>=0?'var(--success)':'var(--danger)')+'">'+(r.delta>=0?'+':'−')+money(Math.abs(r.delta))+'</div>'+(r.kind==='acctTx'?'<button class="btn ghost sm" data-act="delAcctTx" data-id="'+r.id+'" data-acct="'+id+'" style="padding:6px">'+I.trash+'</button>':'')+'</div>';});b+='</div>';}
+  else b+='<p class="hint">Abhi koi entry nahi. Transfer karte waqt is account ko chunein, ya yahan cash daalein/nikalein.</p>';
+  b+='<div class="btn-row" style="margin-top:4px"><button class="btn block" data-act="editAcct" data-id="'+id+'">'+I.edit+' Edit</button></div>';
+  sheet(a.name,b);
+}
+function acctTxForm(aid,dir){
+  return '<div class="field"><label>'+(dir==='in'?'Kitna cash daala (Rs) *':'Kitna cash nikala (Rs) *')+'</label><input id="ax_amt" type="number" inputmode="numeric" placeholder="0" autofocus></div>'+
+    '<div class="field"><label>Tafseel (optional)</label><input id="ax_note" placeholder="'+(dir==='in'?'jaise bank se daala':'jaise cash nikal li')+'"></div>'+
+    '<button class="btn pri block" data-act="saveAcctTx" data-id="'+aid+'" data-dir="'+dir+'">'+I.check+' Save</button>';
+}
+function saveAcctTx(aid,dir){
+  var amt=Number($('ax_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
+  save('acctTx',{id:uid(),acctId:aid,dir:dir,amount:amt,note:$('ax_note').value.trim(),ts:Date.now()}).then(function(){toast('Save ho gaya','good');render();openAcct(aid);});
+}
+
+/* ---- UDHAAR KHATA (who owes you / you owe) ---- */
+function viewUdhaar(){
+  var list=S.udhaar.slice().sort(function(a,b){return udBalance(b.id)-udBalance(a.id);});
+  var h='<div class="view">'+subHead('Udhaar Khata');
+  h+='<div class="tile full" style="margin-top:-4px"><div class="lbl">'+I.coin+'Logon se total LENA hai</div><div class="val tnum" style="color:var(--success)">'+money(totalUdhaarDue())+'</div></div>';
+  h+='<button class="btn pri block sm" data-act="newUd">'+I.plus+' Naya banda (udhaar)</button>';
+  if(!S.udhaar.length){h+=empty(I.coin,'Koi udhaar nahi','Jis se lena ya dena hai usay add karein — phir "udhaar diya" aur "wapsi li" likhte jayein, baqi khud nazar aayega.');}
+  else{h+='<div class="list">';list.forEach(function(p){var bal=udBalance(p.id);h+='<button class="row tap" data-act="openUd" data-id="'+p.id+'"><div class="avatar">'+esc(initial(p.name))+'</div><div class="main"><div class="ttl">'+esc(p.name)+'</div><div class="meta">'+(p.phone?'<span class="pill">'+I.phone+esc(p.phone)+'</span>':'')+'</div></div><div class="right"><div class="price tnum" style="color:'+(bal>0?'var(--success)':bal<0?'var(--danger)':'var(--muted)')+'">'+money(Math.abs(bal))+'</div><div class="meta">'+(bal>0?'lena hai':bal<0?'dena hai':'clear')+'</div></div></button>';});h+='</div>';}
+  h+='</div>';return h;
+}
+function udForm(p){
+  p=p||{};
+  return '<div class="field"><label>Naam *</label><input id="u_name" value="'+esc(p.name||'')+'" placeholder="Banda ka naam"></div>'+
+    '<div class="field"><label>Phone (optional)</label><input id="u_phone" type="tel" inputmode="tel" value="'+esc(p.phone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
+    '<div class="field"><label>Note</label><input id="u_note" value="'+esc(p.note||'')+'" placeholder="koi baat…"></div>'+
+    '<button class="btn pri block" data-act="saveUd" data-id="'+(p.id||'')+'">'+I.check+' '+(p.id?'Update karein':'Add karein')+'</button>'+
+    (p.id?'<button class="btn danger block" data-act="delUd" data-id="'+p.id+'">'+I.trash+' Delete + hisaab</button>':'');
+}
+function saveUd(id){
+  var name=$('u_name').value.trim();if(!name){toast('Naam likhein','err');return;}
+  var old=id?findUd(id):null;
+  save('udhaar',{id:id||uid(),name:name,phone:$('u_phone').value.trim(),note:$('u_note').value.trim(),ts:old?old.ts:Date.now()}).then(function(){closeSheet();S.tab='udhaar';toast(id?'Update ho gaya':'Add ho gaya','good');render();});
+}
+function openUd(id){
+  var p=findUd(id);if(!p)return;var tx=S.udhaarTx.filter(function(t){return t.pid===id;}).sort(function(a,b){return b.ts-a.ts;});
+  var gave=sum(tx.filter(function(t){return t.type==='gave';}),function(t){return t.amount;});
+  var got=sum(tx.filter(function(t){return t.type==='got';}),function(t){return t.amount;});
+  var bal=gave-got;
+  var b='<div class="card pad">';
+  b+='<div class="detail-kv"><span class="k">Total udhaar diya</span><span class="v tnum">'+money(gave)+'</span></div>';
+  b+='<div class="detail-kv"><span class="k">Total wapsi li</span><span class="v tnum">'+money(got)+'</span></div>';
+  b+='<div class="detail-kv"><span class="k"><b>'+(bal>=0?'Lena baqi hai':'Aap ne dena hai')+'</b></span><span class="v tnum" style="color:'+(bal>0?'var(--success)':bal<0?'var(--danger)':'var(--muted)')+'">'+money(Math.abs(bal))+'</span></div>';
+  if(p.phone)b+='<div class="detail-kv"><span class="k">Phone</span><span class="v tnum">'+esc(p.phone)+'</span></div>';
+  if(p.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(p.note)+'</span></div>';
+  b+='</div>';
+  b+='<div class="btn-row"><button class="btn pri block" data-act="udAdd" data-id="'+id+'" data-type="gave">'+I.up+' Udhaar diya</button><button class="btn block" data-act="udAdd" data-id="'+id+'" data-type="got">'+I.down+' Wapsi li</button></div>';
+  if(p.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(p.phone)+'">'+I.copy+' Number copy karein</button>';
+  b+='<div class="section-t"><span>Hisaab (ledger)</span></div>';
+  if(tx.length){b+='<div class="card pad">';tx.forEach(function(t){var slip=t.slip?'<img src="'+t.slip+'" class="slipimg" data-act="viewSlip" data-store="udhaarTx" data-id="'+t.id+'" alt="slip">':'';b+='<div class="ledger">'+slip+'<div class="lmain"><b>'+(t.type==='gave'?'Udhaar diya':'Wapsi li')+'</b><span>'+dateStr(t.ts)+(t.note?' · '+esc(t.note):'')+'</span></div><div class="lamt" style="color:'+(t.type==='gave'?'var(--success)':'var(--danger)')+'">'+(t.type==='gave'?'+':'−')+money(t.amount)+'</div><button class="btn ghost sm" data-act="delUdTx" data-id="'+t.id+'" data-pid="'+id+'" style="padding:6px">'+I.trash+'</button></div>';});b+='</div>';}
+  else b+='<p class="hint">Abhi koi entry nahi.</p>';
+  b+='<div class="btn-row" style="margin-top:4px"><button class="btn block" data-act="editUd" data-id="'+id+'">'+I.edit+' Edit</button></div>';
+  sheet(p.name,b);
+}
+function udTxForm(pid,type){
+  pendingSlip='';
+  return '<div class="field"><label>'+(type==='gave'?'Kitna udhaar diya (Rs) *':'Kitna wapas liya (Rs) *')+'</label><input id="ux_amt" type="number" inputmode="numeric" placeholder="0" autofocus></div>'+
+    '<div class="field"><label>Tafseel (optional)</label><input id="ux_note" placeholder="koi baat…"></div>'+
+    photoField('Slip / Raseed (optional)')+
+    '<button class="btn pri block" data-act="saveUdTx" data-id="'+pid+'" data-type="'+type+'">'+I.check+' Save</button>';
+}
+function saveUdTx(pid,type){
+  var amt=Number($('ux_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
+  save('udhaarTx',{id:uid(),pid:pid,type:type,amount:amt,note:$('ux_note').value.trim(),slip:pendingSlip||'',ts:Date.now()}).then(function(){toast('Save ho gaya','good');render();openUd(pid);});
 }
 
 /* ---- STOCK ---- */
@@ -683,6 +863,7 @@ function txnForm(t){
     '<div class="field" id="svcField"'+(isLoad?' hidden':'')+'><label>Service</label><div class="seg" id="svcSeg">'+svcBtns+'</div></div>'+
     '<div class="two"><div class="field"><label>Amount Rs *</label><input id="t_amt" type="number" inputmode="numeric" value="'+(t.amount!=null?t.amount:'')+'" placeholder="0" autofocus></div>'+
     '<div class="field"><label>Commission Rs</label><input id="t_comm" type="number" inputmode="numeric" value="'+(t.commission!=null?t.commission:'')+'" placeholder="0"></div></div>'+
+    (S.accounts.length?'<div class="field" id="acctField"'+(isLoad?' hidden':'')+'><label>Account (optional)</label><select id="t_acct"><option value="">— koi nahi —</option>'+S.accounts.map(function(ac){return '<option value="'+ac.id+'"'+(t.acctId===ac.id?' selected':'')+'>'+esc(ac.name)+'</option>';}).join('')+'</select></div>':'')+
     '<div class="field"><label>Phone / Account (optional)</label><input id="t_phone" type="tel" inputmode="tel" value="'+esc(t.phone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
     '<button class="btn acc block" data-act="saveTxn" data-id="'+(t.id||'')+'">'+I.check+' '+(t.id?'Update':'Save karein')+'</button>'+
     (t.id?'<button class="btn danger block" data-act="delTxn" data-id="'+t.id+'">'+I.trash+' Delete</button>':'');
@@ -691,12 +872,13 @@ function segPick(seg,btn){[].forEach.call(seg.children,function(x){x.classList.t
 function openTxnForm(t){sheet(t&&t.id?'Transaction edit':'Nai Transaction',txnForm(t),function(root){
   root.querySelector('#svcSeg').addEventListener('click',function(e){var b=e.target.closest('[data-svc]');if(!b)return;txnSvc=b.getAttribute('data-svc');segPick(this,b);});
   root.querySelector('#netSeg').addEventListener('click',function(e){var b=e.target.closest('[data-net]');if(!b)return;txnNet=b.getAttribute('data-net');segPick(this,b);});
-  root.querySelector('#typeSeg').addEventListener('click',function(e){var b=e.target.closest('[data-type]');if(!b)return;txnType=b.getAttribute('data-type');segPick(this,b);var load=txnType==='load';root.querySelector('#netField').hidden=!load;root.querySelector('#svcField').hidden=load;});
+  root.querySelector('#typeSeg').addEventListener('click',function(e){var b=e.target.closest('[data-type]');if(!b)return;txnType=b.getAttribute('data-type');segPick(this,b);var load=txnType==='load';root.querySelector('#netField').hidden=!load;root.querySelector('#svcField').hidden=load;var af=root.querySelector('#acctField');if(af)af.hidden=load;});
 });}
 function saveTxn(id){
   var amt=Number($('t_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
   var old=id?findTxn(id):null;var isLoad=txnType==='load';
-  var obj={id:id||uid(),service:isLoad?txnNet:txnSvc,network:isLoad?txnNet:'',type:txnType,amount:amt,commission:Math.max(0,Number($('t_comm').value)||0),phone:$('t_phone').value.trim(),ts:old?old.ts:Date.now()};
+  var ae=$('t_acct');
+  var obj={id:id||uid(),service:isLoad?txnNet:txnSvc,network:isLoad?txnNet:'',type:txnType,amount:amt,commission:Math.max(0,Number($('t_comm').value)||0),phone:$('t_phone').value.trim(),acctId:(!isLoad&&ae)?ae.value:'',ts:old?old.ts:Date.now()};
   save('txns',obj).then(function(){closeSheet();toast(id?'Update ho gaya':'Save ho gaya','good');render();});
 }
 function openTxn(id){var t=findTxn(id);if(t)openTxnForm(t);}
@@ -803,7 +985,7 @@ function ledgerRow(t,store,isDebit){
   if(store==='supplierTx'){label=isDebit?'Maal liya':'Paisa diya';amt=(isDebit?'+':'−')+money(t.amount).replace('Rs ','Rs ');}
   else {label='Paisa diya '+money(t.moneyGiven)+' · Load '+money(t.loadGot);amt='';}
   var right=store==='supplierTx'?('<div class="lamt" style="color:'+(isDebit?'var(--danger)':'var(--success)')+'">'+amt+'</div>'):'';
-  return '<div class="ledger">'+slip+'<div class="lmain"><b>'+esc(label)+'</b><span>'+dateStr(t.ts)+(t.note?' · '+esc(t.note):'')+'</span></div>'+right+'<button class="btn ghost sm" data-act="del'+(store==='supplierTx'?'SupTx':'CoTx')+'" data-id="'+t.id+'" style="padding:6px">'+I.trash+'</button></div>';
+  return '<div class="ledger">'+slip+'<div class="lmain"><b>'+esc(label)+'</b><span>'+dateStr(t.ts)+(t.rep?' · '+esc(t.rep):'')+(t.note?' · '+esc(t.note):'')+'</span></div>'+right+'<button class="btn ghost sm" data-act="del'+(store==='supplierTx'?'SupTx':'CoTx')+'" data-id="'+t.id+'" style="padding:6px">'+I.trash+'</button></div>';
 }
 function supAddForm(sid,type){
   pendingSlip='';var isPay=type==='payment';
@@ -868,6 +1050,7 @@ function coAddForm(cid){
   return '<div class="two"><div class="field"><label>Paisa diya (Rs)</label><input id="cx_money" type="number" inputmode="numeric" placeholder="0" autofocus></div>'+
     '<div class="field"><label>Load aaya (Rs)</label><input id="cx_load" type="number" inputmode="numeric" placeholder="0"></div></div>'+
     '<p class="hint">Jitna paisa diya likhein, aur jitna load abhi hua. Agar sirf paisa diya aur load baad mein karega to Load aaya 0 rakhein.</p>'+
+    '<div class="field"><label>Representative / banda (optional)</label><input id="cx_rep" placeholder="e.g. Ali bhai"></div>'+
     '<div class="field"><label>Tafseel (optional)</label><input id="cx_note" placeholder="e.g. subah ka hisaab"></div>'+
     photoField('Slip / Raseed (optional)')+
     '<button class="btn pri block" data-act="saveCoTx" data-id="'+cid+'">'+I.check+' Save</button>';
@@ -875,7 +1058,7 @@ function coAddForm(cid){
 function saveCoTx(cid){
   var mg=Math.max(0,Number($('cx_money').value)||0);var lg=Math.max(0,Number($('cx_load').value)||0);
   if(mg<=0&&lg<=0){toast('Paisa ya load likhein','err');return;}
-  var obj={id:uid(),coId:cid,moneyGiven:mg,loadGot:lg,note:$('cx_note').value.trim(),slip:pendingSlip||'',ts:Date.now()};
+  var repEl=$('cx_rep');var obj={id:uid(),coId:cid,moneyGiven:mg,loadGot:lg,rep:repEl?repEl.value.trim():'',note:$('cx_note').value.trim(),slip:pendingSlip||'',ts:Date.now()};
   save('loadTx',obj).then(function(){toast('Save ho gaya','good');render();openCo(cid);});
 }
 
@@ -912,6 +1095,8 @@ function viewReports(){
   h+='<div class="section-t"><span>Khata summary</span></div><div class="card pad">';
   h+=repLine('Customers se baqi (udhaar)',money(sum(S.repairs.filter(function(r){return r.status!=='delivered';}),function(r){return Number(r.charges||0)-Number(r.advance||0);})),'');
   h+=repLine('Suppliers ko dena hai',money(totalSupDue()),'');
+  h+=repLine('Udhaar khata — lena hai',money(totalUdhaarDue()),'');
+  h+=repLine('Accounts mein total',money(totalAcct()),'');
   h+=repLine('Available load',money(availableLoad()),'');
   h+='</div>';
   h+='<p class="hint">Note: Repair aamdani sirf "De diya" (delivered) kaam se ginti hai. Profit = bikri rate − kharid cost.</p>';
@@ -1055,6 +1240,28 @@ document.addEventListener('click',function(e){
     case 'delCoTx': {var ctx=findLedger('loadTx',id);confirmSheet('Entry delete?','Ye hisaab ki entry delete ho jayegi.','Haan, delete',function(){var co=ctx?ctx.coId:null;removeDoc('loadTx',id).then(function(){closeSheet();toast('Delete','good');render();if(co)openCo(co);});});break;}
     case 'addSlip': pickImage(function(d){pendingSlip=d;var p=$('slipPrev');if(p)p.innerHTML=slipPrevHtml();});break;
     case 'rmSlip': pendingSlip='';{var p2=$('slipPrev');if(p2)p2.innerHTML=slipPrevHtml();}break;
+    case 'newPanel': openPanelForm(null);break;
+    case 'editPanel': openPanelForm(findPanel(id));break;
+    case 'savePanel': savePanel(id);break;
+    case 'delPanel': confirmSheet('Model delete?','Ye model/panel record delete ho jayega.','Haan, delete',function(){removeDoc('panels',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
+    case 'pbrand': S.panelBrand=id;render();break;
+    case 'newAcct': sheet('Naya Account',acctForm(null));break;
+    case 'openAcct': openAcct(id);break;
+    case 'editAcct': sheet('Account edit',acctForm(findAcct(id)));break;
+    case 'saveAcct': saveAcct(id);break;
+    case 'delAcct': confirmSheet('Account delete?','Account aur iski cash entries delete ho jayengi (transfer records rahenge).','Haan, delete',function(){var tx=S.acctTx.filter(function(x){return x.acctId===id;});var ch=Promise.resolve();tx.forEach(function(x){ch=ch.then(function(){return removeDoc('acctTx',x.id);});});ch.then(function(){return removeDoc('accounts',id);}).then(function(){closeSheet();S.tab='accounts';toast('Delete','good');render();});});break;
+    case 'acctIn': sheet('Cash daala',acctTxForm(id,'in'));break;
+    case 'acctOut': sheet('Cash nikala',acctTxForm(id,'out'));break;
+    case 'saveAcctTx': saveAcctTx(id,a.getAttribute('data-dir'));break;
+    case 'delAcctTx': {var accId=a.getAttribute('data-acct');confirmSheet('Entry delete?','Ye entry delete ho jayegi.','Haan, delete',function(){removeDoc('acctTx',id).then(function(){closeSheet();toast('Delete','good');render();if(accId)openAcct(accId);});});break;}
+    case 'newUd': sheet('Naya Udhaar',udForm(null));break;
+    case 'openUd': openUd(id);break;
+    case 'editUd': sheet('Udhaar edit',udForm(findUd(id)));break;
+    case 'saveUd': saveUd(id);break;
+    case 'delUd': confirmSheet('Delete?','Ye banda aur saara udhaar hisaab delete ho jayega.','Haan, delete',function(){var tx=S.udhaarTx.filter(function(x){return x.pid===id;});var ch=Promise.resolve();tx.forEach(function(x){ch=ch.then(function(){return removeDoc('udhaarTx',x.id);});});ch.then(function(){return removeDoc('udhaar',id);}).then(function(){closeSheet();S.tab='udhaar';toast('Delete','good');render();});});break;
+    case 'udAdd': sheet(a.getAttribute('data-type')==='gave'?'Udhaar diya':'Wapsi li',udTxForm(id,a.getAttribute('data-type')));break;
+    case 'saveUdTx': saveUdTx(id,a.getAttribute('data-type'));break;
+    case 'delUdTx': {var udp=a.getAttribute('data-pid');confirmSheet('Entry delete?','Ye entry delete ho jayegi.','Haan, delete',function(){removeDoc('udhaarTx',id).then(function(){closeSheet();toast('Delete','good');render();if(udp)openUd(udp);});});break;}
     case 'backup': backup();break;
     case 'restore': restore();break;
   }
@@ -1062,7 +1269,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('click',function(e){var p=e.target.closest('#paySeg [data-pay]');if(p){[].forEach.call(p.parentNode.children,function(x){x.classList.toggle('on',x===p);});}});
 document.addEventListener('change',function(e){if(e.target.id==='f_cat'){var w=$('f_newcatwrap');if(w)w.hidden=(e.target.value!=='__new__');}});
 document.addEventListener('input',function(e){
-  if(e.target.id==='stockSearch'||e.target.id==='custSearch'){var which=e.target.id;var val=e.target.value,pos=e.target.selectionStart;if(which==='stockSearch')S.stockQ=val;else S.custQ=val;render();var ns=document.getElementById(which);if(ns){ns.focus();try{ns.setSelectionRange(pos,pos);}catch(_){}}}
+  if(e.target.id==='stockSearch'||e.target.id==='custSearch'||e.target.id==='panelSearch'){var which=e.target.id;var val=e.target.value,pos=e.target.selectionStart;if(which==='stockSearch')S.stockQ=val;else if(which==='custSearch')S.custQ=val;else S.panelQ=val;render();var ns=document.getElementById(which);if(ns){ns.focus();try{ns.setSelectionRange(pos,pos);}catch(_){}}}
 });
 
 initStore();render();
