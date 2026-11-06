@@ -221,6 +221,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-left:max(16
 .lightbox img{max-width:100%;max-height:100%;border-radius:10px}
 .slip-prev img{width:100%;max-height:170px;object-fit:contain;border-radius:10px;background:var(--surface-2);margin-bottom:8px}
 .itemphoto{width:52px;height:52px;border-radius:11px;object-fit:cover;flex:none;border:1px solid var(--border)}
+.barchart{display:flex;align-items:flex-end;gap:6px;height:112px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.bar-wrap{width:100%;height:88px;display:flex;align-items:flex-end;justify-content:center}
+.bar{width:68%;max-width:26px;background:linear-gradient(var(--primary-2),var(--primary));border-radius:5px 5px 0 0;min-height:2px}
+.bar-lbl{font-size:10px;color:var(--muted);font-weight:600}
 </style>
 
 <div class="appbar"><div class="appbar-in">
@@ -897,6 +902,7 @@ function txnForm(t){
     '<div class="field"><label>Customer number (optional)</label><input id="t_phone" type="tel" inputmode="tel" value="'+esc(t.phone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
     '<p class="hint">Date aur time khud save ho jayega.</p>'+
     '<button class="btn pri block" data-act="saveTxn" data-id="'+(t.id||'')+'">'+I.check+' '+(t.id?'Update karein':'Save karein')+'</button>'+
+    (t.id&&t.phone?'<button class="btn wa block" data-act="waTxn" data-id="'+t.id+'">'+I.wa+' WhatsApp confirmation</button>':'')+
     (t.id?'<button class="btn danger block" data-act="delTxn" data-id="'+t.id+'">'+I.trash+' Delete</button>':'');
 }
 function segPick(seg,btn){[].forEach.call(seg.children,function(x){x.classList.toggle('on',x===btn);});}
@@ -1003,7 +1009,7 @@ function openSup(id){
   if(s.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(s.note)+'</span></div>';
   b+='</div>';
   b+='<div class="btn-row"><button class="btn acc block" data-act="supAdd" data-id="'+id+'" data-type="purchase">'+I.plus+' Maal liya</button><button class="btn pri block" data-act="supAdd" data-id="'+id+'" data-type="payment">'+I.cash+' Paisa diya</button></div>';
-  if(s.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(s.phone)+'">'+I.copy+' Number copy karein</button>';
+  if(s.phone)b+='<div class="btn-row"><button class="btn block sm" data-act="copyNum" data-id="'+esc(s.phone)+'">'+I.copy+' Number copy</button><button class="btn block sm wa" data-act="waSup" data-id="'+id+'">'+I.wa+' WhatsApp</button></div>';
   b+='<div class="section-t"><span>Hisaab (ledger)</span></div>';
   if(tx.length){b+='<div class="card pad">';tx.forEach(function(t){b+=ledgerRow(t,'supplierTx',t.type==='purchase');});b+='</div>';}
   else b+='<p class="hint">Abhi koi entry nahi. Upar se "Maal liya" ya "Paisa diya" likhein.</p>';
@@ -1068,7 +1074,7 @@ function openCo(id){
   if(c.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(c.note)+'</span></div>';
   b+='</div>';
   b+='<button class="btn acc block" data-act="coAdd" data-id="'+id+'">'+I.plus+' Nai entry (paisa diya / load aaya)</button>';
-  if(c.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(c.phone)+'">'+I.copy+' Number copy karein</button>';
+  if(c.phone)b+='<div class="btn-row"><button class="btn block sm" data-act="copyNum" data-id="'+esc(c.phone)+'">'+I.copy+' Number copy</button><button class="btn block sm wa" data-act="waCo" data-id="'+id+'">'+I.wa+' WhatsApp</button></div>';
   b+='<div class="section-t"><span>Hisaab (ledger)</span></div>';
   if(tx.length){b+='<div class="card pad">';tx.forEach(function(t){b+=ledgerRow(t,'loadTx',false);});b+='</div>';}
   else b+='<p class="hint">Abhi koi entry nahi. Jab company aaye — paisa diya aur load aaya likh dein.</p>';
@@ -1107,6 +1113,7 @@ function viewReports(){
   var h='<div class="view">'+subHead('Reports (Hisaab)');
   h+='<div class="chips" style="margin-top:-4px">';[['today','Aaj'],['month','Is Mahine'],['all','Sab']].forEach(function(x){h+='<button class="chip'+(rng===x[0]?' on':'')+'" data-act="rptRange" data-id="'+x[0]+'">'+x[1]+'</button>';});h+='</div>';
   h+='<div class="tiles">'+tile('p',I.cash,'Kul Aamdani',money(totalIncome),'sale+repair+comm')+tile('a',I.coin,'Sale Profit',money(profit),'munafa')+'</div>';
+  h+=salesChart();
   h+='<div class="card pad">';
   h+=repLine('Bikri (sale)',money(saleTotal),sales.length+' sale');
   h+=repLine('Sale ka profit',money(profit),'');
@@ -1224,6 +1231,33 @@ function waReceipt(id){
   var msg=shopName()+'\nReceipt — '+dateStr(s.ts)+' '+clockTime(s.ts)+'\n'+s.items.map(function(it){return '• '+it.name+' x'+it.qty+' = Rs '+Math.round(it.price*it.qty).toLocaleString('en-PK');}).join('\n')+'\nTotal: Rs '+Math.round(s.total).toLocaleString('en-PK')+' ('+(s.pay||'Cash')+')\nShukriya!';
   waOpen(s.phone,msg);
 }
+function waTxn(id){
+  var t=findTxn(id);if(!t)return;if(!normPhone(t.phone)){toast('Is lenden par number nahi','err');return;}
+  var ty=t.type==='send'?'Send':t.type==='receive'?'Receive':'Load';
+  var msg='Assalam o Alaikum'+(t.custName?' '+t.custName:'')+',\n'+shopName()+': '+(t.service||'')+' '+ty+' Rs '+Math.round(t.amount).toLocaleString('en-PK')+' mukammal ho gaya. Shukriya.'+(S.settings.shopPhone?'\n— '+S.settings.shopPhone:'');
+  waOpen(t.phone,msg);
+}
+function waCo(id){
+  var c=findCo(id);if(!c)return;if(!normPhone(c.phone)){toast('Company ka number nahi','err');return;}
+  var bal=coBalance(id);
+  var msg='Assalam o Alaikum'+(c.name?' '+c.name:'')+',\n'+shopName()+(bal>0?': aap ke zimme Rs '+Math.round(bal).toLocaleString('en-PK')+' ka load karna baqi hai. Meharbani kar ke kar dein. Shukriya.':' se raabta.');
+  waOpen(c.phone,msg);
+}
+function waSup(id){
+  var s=findSup(id);if(!s)return;if(!normPhone(s.phone)){toast('Supplier ka number nahi','err');return;}
+  var bal=supBalance(id);
+  var msg='Assalam o Alaikum'+(s.name?' '+s.name:'')+',\n'+shopName()+(bal>0?': aap ka Rs '+Math.round(bal).toLocaleString('en-PK')+' baqi hai, jald ada kar doonga. Shukriya.':' se raabta.');
+  waOpen(s.phone,msg);
+}
+function salesChart(){
+  var days=[],today=startOfDay();
+  for(var i=6;i>=0;i--){var d0=today-i*86400000,d1=d0+86400000;var tot=sum(S.sales.filter(function(s){return s.ts>=d0&&s.ts<d1;}),function(s){return s.total;});days.push({d:new Date(d0),tot:tot});}
+  var max=Math.max(1,Math.max.apply(null,days.map(function(x){return x.tot;})));
+  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var bars=days.map(function(x){var hh=Math.round(x.tot/max*100);return '<div class="bar-col"><div class="bar-wrap"><div class="bar" style="height:'+(x.tot>0?Math.max(hh,4):2)+'%" title="'+money(x.tot)+'"></div></div><div class="bar-lbl">'+dn[x.d.getDay()]+'</div></div>';}).join('');
+  var wk=sum(days,function(x){return x.tot;});
+  return '<div class="section-t"><span>Pichle 7 din — bikri</span><span class="tnum" style="color:var(--primary-ink);font-weight:700">'+money(wk)+'</span></div><div class="card pad"><div class="barchart">'+bars+'</div></div>';
+}
 
 /* ===== events ===== */
 document.addEventListener('click',function(e){
@@ -1272,6 +1306,9 @@ document.addEventListener('click',function(e){
     case 'waRemind': waRemind(a.getAttribute('data-kind'),id);break;
     case 'waRepair': waRepair(id);break;
     case 'waReceipt': waReceipt(id);break;
+    case 'waTxn': waTxn(id);break;
+    case 'waCo': waCo(id);break;
+    case 'waSup': waSup(id);break;
     case 'rptRange': S.reportRange=id;render();break;
     case 'saveShop': saveSettings({shopName:$('st_name').value.trim()||'Ibrahim Mobile Traders',shopSub:$('st_sub').value.trim(),shopPhone:$('st_phone').value.trim()}).then(function(){applyBrand();toast('Save ho gaya','good');});break;
     case 'addCat': {var c=$('newCatInp').value.trim();if(!c){toast('Naam likhein','err');break;}if(getCats().indexOf(c)>-1){toast('Pehle se hai','err');break;}saveSettings({categories:getCats().concat([c])}).then(function(){toast('Category add','good');render();});break;}
