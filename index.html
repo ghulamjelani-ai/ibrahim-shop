@@ -290,7 +290,7 @@ var STORES=Object.keys(SK).concat(['settings']);
 
 var S={tab:'home',ready:false,storeErr:false,
   inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],settings:{},
-  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all'};
+  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:''};
 var pendingSlip='';
 
 function $(id){return document.getElementById(id);}
@@ -405,7 +405,7 @@ function render(){
   v.innerHTML=(map[S.tab]||viewHome)();
 }
 function updateBadge(tab,n){var btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(!btn)return;var b=btn.querySelector('.badge');if(n>0){if(!b){b=document.createElement('span');b.className='badge';btn.appendChild(b);}b.textContent=n>99?'99+':n;}else if(b)b.remove();}
-function goTab(t){S.tab=t;S.stockQ='';S.custQ='';S.panelQ='';render();var m=document.querySelector('main');if(m)m.scrollTop=0;}
+function goTab(t){S.tab=t;S.stockQ='';S.custQ='';S.panelQ='';S.udQ='';render();var m=document.querySelector('main');if(m)m.scrollTop=0;}
 function subHead(title){return '<button class="back" data-act="go" data-id="home">'+I.chevL+' Home</button><div class="vhead"><div><h2>'+esc(title)+'</h2></div></div>';}
 function empty(ic,title,msg){return '<div class="empty"><div class="ic">'+ic+'</div><b>'+esc(title)+'</b><p>'+esc(msg)+'</p></div>';}
 function tile(cls,ic,lbl,val,sub){return '<div class="tile '+cls+'"><div class="lbl">'+ic+esc(lbl)+'</div><div class="val tnum">'+(typeof val==='number'?num(val):esc(val))+(sub?' <small>'+esc(sub)+'</small>':'')+'</div></div>';}
@@ -442,7 +442,7 @@ function viewHome(){
   }
   var udLena=totalUdhaarDue(),supDena=totalSupDue();
   if(udLena>0||supDena>0){h+='<div class="tiles">'+tile('',I.coin,'Lena hai',money(udLena),'logon se')+tile('',I.truck,'Dena hai',money(supDena),'supplier ko')+'</div>';}
-  h+='<div class="btn-row"><button class="btn pri" data-act="go" data-id="sale">'+I.cart+' Nai Bikri</button><button class="btn acc" data-act="go" data-id="service">'+I.coin+' Load / Transfer</button></div>';
+  h+='<div class="btn-row"><button class="btn pri" data-act="go" data-id="sale">'+I.cart+' New Sale</button><button class="btn acc" data-act="go" data-id="service">'+I.coin+' Load / Transfer</button></div>';
   h+='<div class="btn-row"><button class="btn" data-act="go" data-id="panels">'+I.grid+' Model dhoondein</button><button class="btn" data-act="go" data-id="stock">'+I.box+' Stock</button></div>';
   h+='<div class="btn-row"><button class="btn" data-act="go" data-id="customers">'+I.users+' Customers</button><button class="btn" data-act="go" data-id="udhaar">'+I.coin+' Udhaar Khata</button></div>';
   if(low.length){
@@ -489,6 +489,7 @@ function acctLedger(aid){
 }
 function udBalance(pid){var tx=S.udhaarTx.filter(function(t){return t.pid===pid;});return sum(tx.filter(function(t){return t.type==='gave';}),function(t){return t.amount;})-sum(tx.filter(function(t){return t.type==='got';}),function(t){return t.amount;});}
 function totalUdhaarDue(){return sum(S.udhaar,function(p){var b=udBalance(p.id);return b>0?b:0;});}
+function totalUdhaarOwe(){return sum(S.udhaar,function(p){var b=udBalance(p.id);return b<0?-b:0;});}
 
 /* ---- MODELS / PANELS (search-first) ---- */
 function viewPanels(){
@@ -587,11 +588,14 @@ function saveAcctTx(aid,dir){
 /* ---- UDHAAR KHATA (who owes you / you owe) ---- */
 function viewUdhaar(){
   var list=S.udhaar.slice().sort(function(a,b){return udBalance(b.id)-udBalance(a.id);});
+  if(S.udQ){var q=S.udQ.toLowerCase();list=list.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>-1||normPhone(p.phone).indexOf(normPhone(S.udQ))>-1;});}
   var h='<div class="view">'+subHead('Udhaar Khata');
-  h+='<div class="tile full" style="margin-top:-4px"><div class="lbl">'+I.coin+'Logon se total LENA hai</div><div class="val tnum" style="color:var(--success)">'+money(totalUdhaarDue())+'</div></div>';
-  h+='<button class="btn pri block sm" data-act="newUd">'+I.plus+' Naya banda (udhaar)</button>';
-  if(!S.udhaar.length){h+=empty(I.coin,'Koi udhaar nahi','Jis se lena ya dena hai usay add karein — phir "udhaar diya" aur "wapsi li" likhte jayein, baqi khud nazar aayega.');}
-  else{h+='<div class="list">';list.forEach(function(p){var bal=udBalance(p.id);h+='<button class="row tap" data-act="openUd" data-id="'+p.id+'"><div class="avatar">'+esc(initial(p.name))+'</div><div class="main"><div class="ttl">'+esc(p.name)+'</div><div class="meta">'+(p.phone?'<span class="pill">'+I.phone+esc(p.phone)+'</span>':'')+'</div></div><div class="right"><div class="price tnum" style="color:'+(bal>0?'var(--success)':bal<0?'var(--danger)':'var(--muted)')+'">'+money(Math.abs(bal))+'</div><div class="meta">'+(bal>0?'lena hai':bal<0?'dena hai':'clear')+'</div></div></button>';});h+='</div>';}
+  h+='<div class="tiles" style="margin-top:-4px"><div class="tile" style="background:var(--success-soft);border-color:transparent"><div class="lbl" style="color:var(--success)">'+I.down+'Lena hai</div><div class="val tnum" style="color:var(--success)">'+money(totalUdhaarDue())+'</div></div><div class="tile" style="background:var(--danger-soft);border-color:transparent"><div class="lbl" style="color:var(--danger)">'+I.up+'Dena hai</div><div class="val tnum" style="color:var(--danger)">'+money(totalUdhaarOwe())+'</div></div></div>';
+  h+='<button class="btn pri block sm" data-act="newUd">'+I.plus+' Naya khata (udhaar)</button>';
+  if(S.udhaar.length)h+='<div class="search">'+I.search+'<input id="udSearch" placeholder="Naam ya number dhoondein…" value="'+esc(S.udQ)+'"></div>';
+  if(!S.udhaar.length){h+=empty(I.coin,'Abhi koi khata nahi','Jis se lena ya dena hai usay add karein. Phir "Udhaar diya" aur "Wapsi li" likhte jayein — baqi khud chalta rahega.');}
+  else if(!list.length){h+=empty(I.search,'Kuch nahi mila','Koi aur naam ya number try karein.');}
+  else{h+='<div class="list">';list.forEach(function(p){var bal=udBalance(p.id);var col=bal>0?'var(--success)':bal<0?'var(--danger)':'var(--muted)';h+='<button class="row tap" data-act="openUd" data-id="'+p.id+'"><div class="avatar">'+esc(initial(p.name))+'</div><div class="main"><div class="ttl">'+esc(p.name)+'</div><div class="meta">'+(p.phone?'<span class="pill">'+I.phone+esc(p.phone)+'</span>':'<span>number nahi</span>')+'</div></div><div class="right"><div class="price tnum" style="color:'+col+'">'+money(Math.abs(bal))+'</div><div class="meta" style="color:'+col+';font-weight:700">'+(bal>0?'LENA':bal<0?'DENA':'CLEAR')+'</div></div></button>';});h+='</div>';}
   h+='</div>';return h;
 }
 function udForm(p){
@@ -622,7 +626,8 @@ function openUd(id){
   b+='<div class="btn-row"><button class="btn pri block" data-act="udAdd" data-id="'+id+'" data-type="gave">'+I.up+' Udhaar diya</button><button class="btn block" data-act="udAdd" data-id="'+id+'" data-type="got">'+I.down+' Wapsi li</button></div>';
   if(p.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(p.phone)+'">'+I.copy+' Number copy karein</button>';
   b+='<div class="section-t"><span>Hisaab (ledger)</span></div>';
-  if(tx.length){b+='<div class="card pad">';tx.forEach(function(t){var slip=t.slip?'<img src="'+t.slip+'" class="slipimg" data-act="viewSlip" data-store="udhaarTx" data-id="'+t.id+'" alt="slip">':'';b+='<div class="ledger">'+slip+'<div class="lmain"><b>'+(t.type==='gave'?'Udhaar diya':'Wapsi li')+'</b><span>'+dateStr(t.ts)+(t.note?' · '+esc(t.note):'')+'</span></div><div class="lamt" style="color:'+(t.type==='gave'?'var(--success)':'var(--danger)')+'">'+(t.type==='gave'?'+':'−')+money(t.amount)+'</div><button class="btn ghost sm" data-act="delUdTx" data-id="'+t.id+'" data-pid="'+id+'" style="padding:6px">'+I.trash+'</button></div>';});b+='</div>';}
+  if(tx.length){var asc=tx.slice().sort(function(a,b){return a.ts-b.ts;});var run=0;var runMap={};asc.forEach(function(t){run+=(t.type==='gave'?Number(t.amount):-Number(t.amount));runMap[t.id]=run;});
+    b+='<div class="card pad">';tx.forEach(function(t){var slip=t.slip?'<img src="'+t.slip+'" class="slipimg" data-act="viewSlip" data-store="udhaarTx" data-id="'+t.id+'" alt="slip">':'';var rb=runMap[t.id];b+='<div class="ledger">'+slip+'<div class="lmain"><b>'+(t.type==='gave'?'Udhaar diya':'Wapsi li')+'</b><span>'+dateStr(t.ts)+(t.note?' · '+esc(t.note):'')+' · baqi '+money(Math.abs(rb))+(rb<0?' (dena)':rb>0?' (lena)':'')+'</span></div><div class="lamt" style="color:'+(t.type==='gave'?'var(--success)':'var(--danger)')+'">'+(t.type==='gave'?'+':'−')+money(t.amount)+'</div><button class="btn ghost sm" data-act="delUdTx" data-id="'+t.id+'" data-pid="'+id+'" style="padding:6px">'+I.trash+'</button></div>';});b+='</div>';}
   else b+='<p class="hint">Abhi koi entry nahi.</p>';
   b+='<div class="btn-row" style="margin-top:4px"><button class="btn block" data-act="editUd" data-id="'+id+'">'+I.edit+' Edit</button></div>';
   sheet(p.name,b);
@@ -1003,14 +1008,13 @@ function saveSupTx(sid,type){
 /* ---- LOAD COMPANIES ---- */
 function viewLoadCos(){
   var list=S.loadCos.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+  list.sort(function(a,b){return coBalance(b.id)-coBalance(a.id);});
   var h='<div class="view">'+subHead('Load Company');
-  h+='<div class="tiles" style="margin-top:-4px">'+
-    '<div class="tile p"><div class="lbl">'+I.tower+'Available load</div><div class="val tnum">'+money(availableLoad())+'</div></div>'+
-    '<div class="tile a"><div class="lbl">'+I.alert+'Company se lena</div><div class="val tnum">'+money(coPendingTotal())+'</div></div></div>';
-  h+='<p class="hint">Available = sab company se jo load aaya − jo customers ko becha. "Company se lena" = jo paisa aap ne diya lekin load abhi nahi hua.</p>';
+  h+='<div class="tile full" style="margin-top:-4px;background:var(--accent-soft);border-color:transparent"><div class="lbl" style="color:var(--accent)">'+I.alert+'Sab companies se lena baqi</div><div class="val tnum" style="color:var(--accent)">'+money(coPendingTotal())+'</div></div>';
+  h+='<p class="hint">Har company ka hisaab neeche alag hai. "Baqi" = jo paisa aap ne diya lekin load abhi aana baqi hai. (Aap ke paas kul available load Service tab par: '+money(availableLoad())+')</p>';
   h+='<button class="btn pri block sm" data-act="newCo">'+I.plus+' Nai load company</button>';
-  if(!S.loadCos.length){h+=empty(I.tower,'Koi company nahi','Jo company/banda aap ki shop par load karne aata hai usko add karein. Jab woh aaye — paisa diya aur load aaya likh dein, baqi khud nazar aayega.');}
-  else{h+='<div class="list">';list.forEach(function(c){var bal=coBalance(c.id);h+='<button class="row tap" data-act="openCo" data-id="'+c.id+'"><div class="avatar">'+I.tower+'</div><div class="main"><div class="ttl">'+esc(c.name)+'</div><div class="meta">'+(c.phone?'<span class="pill">'+I.phone+esc(c.phone)+'</span>':'')+'</div></div><div class="right"><div class="price tnum" style="color:'+(bal>0?'var(--accent)':'var(--success)')+'">'+money(bal)+'</div><div class="meta">'+(bal>0?'load baqi':'poora')+'</div></div></button>';});h+='</div>';}
+  if(!S.loadCos.length){h+=empty(I.tower,'Koi company nahi','Jo company ya banda aap ki shop par load karne aata hai usko add karein — Zong, Jazz, Ufone, har ek alag. Jab woh aaye: paisa diya aur load aaya likh dein, baqi khud nazar aayega.');}
+  else{h+='<div class="list">';list.forEach(function(c){var tx=S.loadTx.filter(function(t){return t.coId===c.id;});var mg=sum(tx,function(t){return Number(t.moneyGiven)||0;});var lg=sum(tx,function(t){return Number(t.loadGot)||0;});var bal=mg-lg;var col=bal>0?'var(--accent)':bal<0?'var(--success)':'var(--muted)';h+='<button class="row tap" data-act="openCo" data-id="'+c.id+'"><div class="avatar">'+I.tower+'</div><div class="main"><div class="ttl">'+esc(c.name)+'</div><div class="meta"><span>Diya '+money(mg)+'</span><span>Load '+money(lg)+'</span></div></div><div class="right"><div class="price tnum" style="color:'+col+'">'+money(Math.abs(bal))+'</div><div class="meta" style="color:'+col+';font-weight:700">'+(bal>0?'LENA':bal<0?'EXTRA':'POORA')+'</div></div></button>';});h+='</div>';}
   h+='</div>';return h;
 }
 function coForm(c){
@@ -1269,7 +1273,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('click',function(e){var p=e.target.closest('#paySeg [data-pay]');if(p){[].forEach.call(p.parentNode.children,function(x){x.classList.toggle('on',x===p);});}});
 document.addEventListener('change',function(e){if(e.target.id==='f_cat'){var w=$('f_newcatwrap');if(w)w.hidden=(e.target.value!=='__new__');}});
 document.addEventListener('input',function(e){
-  if(e.target.id==='stockSearch'||e.target.id==='custSearch'||e.target.id==='panelSearch'){var which=e.target.id;var val=e.target.value,pos=e.target.selectionStart;if(which==='stockSearch')S.stockQ=val;else if(which==='custSearch')S.custQ=val;else S.panelQ=val;render();var ns=document.getElementById(which);if(ns){ns.focus();try{ns.setSelectionRange(pos,pos);}catch(_){}}}
+  if(e.target.id==='stockSearch'||e.target.id==='custSearch'||e.target.id==='panelSearch'||e.target.id==='udSearch'){var which=e.target.id;var val=e.target.value,pos=e.target.selectionStart;if(which==='stockSearch')S.stockQ=val;else if(which==='custSearch')S.custQ=val;else if(which==='panelSearch')S.panelQ=val;else S.udQ=val;render();var ns=document.getElementById(which);if(ns){ns.focus();try{ns.setSelectionRange(pos,pos);}catch(_){}}}
 });
 
 initStore();render();
