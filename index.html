@@ -113,6 +113,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-left:max(16
 .btn.sm{padding:7px 11px;font-size:12.5px;border-radius:10px}
 .btn.block{width:100%}
 .btn.danger{color:var(--danger);border-color:var(--danger-soft);background:var(--danger-soft)}
+.btn.wa{background:#25d366;color:#fff;border-color:#25d366}
 .btn:disabled{opacity:.5;pointer-events:none}
 .btn-row{display:flex;gap:9px;flex-wrap:wrap}
 .btn-row>.btn{flex:1;min-width:120px}
@@ -276,7 +277,8 @@ var I={
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
   chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5h-5a2 2 0 0 1 0-4h5"/><circle cx="16" cy="12" r="1"/></svg>'
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5h-5a2 2 0 0 1 0-4h5"/><circle cx="16" cy="12" r="1"/></svg>',
+  wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4Zm4.5 10.3c-.2.5-1.1 1-1.5 1-.4.1-.9.1-2.8-.8-2.4-1.1-3.9-3.6-4-3.8-.1-.2-.9-1.2-.9-2.3s.6-1.6.8-1.8c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .5.4l.7 1.7c.1.2.1.3 0 .4l-.3.5c-.2.2-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.5-.1l.6-.7c.2-.2.3-.2.5-.1l1.6.8c.3.1.4.2.5.3 0 .1 0 .5-.2.9Z"/></svg>'
 };
 
 var DEF_CATS=['Glass/Cover','Charger/Cable','Panel/Screen','Handsfree','Battery','Mobile Set','SIM/Memory','Accessories','Other'];
@@ -624,7 +626,7 @@ function openUd(id){
   if(p.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(p.note)+'</span></div>';
   b+='</div>';
   b+='<div class="btn-row"><button class="btn pri block" data-act="udAdd" data-id="'+id+'" data-type="gave">'+I.up+' Udhaar diya</button><button class="btn block" data-act="udAdd" data-id="'+id+'" data-type="got">'+I.down+' Wapsi li</button></div>';
-  if(p.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(p.phone)+'">'+I.copy+' Number copy karein</button>';
+  if(p.phone)b+='<div class="btn-row"><button class="btn block sm" data-act="copyNum" data-id="'+esc(p.phone)+'">'+I.copy+' Number copy</button>'+(bal>0?'<button class="btn block sm wa" data-act="waRemind" data-kind="ud" data-id="'+id+'">'+I.wa+' WhatsApp reminder</button>':'')+'</div>';
   b+='<div class="section-t"><span>Hisaab (ledger)</span></div>';
   if(tx.length){var asc=tx.slice().sort(function(a,b){return a.ts-b.ts;});var run=0;var runMap={};asc.forEach(function(t){run+=(t.type==='gave'?Number(t.amount):-Number(t.amount));runMap[t.id]=run;});
     b+='<div class="card pad">';tx.forEach(function(t){var slip=t.slip?'<img src="'+t.slip+'" class="slipimg" data-act="viewSlip" data-store="udhaarTx" data-id="'+t.id+'" alt="slip">':'';var rb=runMap[t.id];b+='<div class="ledger">'+slip+'<div class="lmain"><b>'+(t.type==='gave'?'Udhaar diya':'Wapsi li')+'</b><span>'+dateStr(t.ts)+(t.note?' · '+esc(t.note):'')+' · baqi '+money(Math.abs(rb))+(rb<0?' (dena)':rb>0?' (lena)':'')+'</span></div><div class="lamt" style="color:'+(t.type==='gave'?'var(--success)':'var(--danger)')+'">'+(t.type==='gave'?'+':'−')+money(t.amount)+'</div><button class="btn ghost sm" data-act="delUdTx" data-id="'+t.id+'" data-pid="'+id+'" style="padding:6px">'+I.trash+'</button></div>';});b+='</div>';}
@@ -765,7 +767,8 @@ function saleDetail(id){
   b+='<div class="detail-kv"><span class="k"><b>Total</b></span><span class="v tnum" style="color:var(--primary-ink)">'+money(s.total)+'</span></div>';
   b+='<div class="detail-kv"><span class="k">Payment</span><span class="v">'+esc(s.pay||'Cash')+'</span></div>';
   if(s.phone)b+='<div class="detail-kv"><span class="k">Number</span><span class="v tnum">'+esc(s.phone)+'</span></div>';
-  b+='</div><p class="hint" style="text-align:center">Receipt ki photo khinch kar customer ko bhej sakte hain.</p>';
+  b+='</div><p class="hint" style="text-align:center">Receipt ki photo khinch kar bhej sakte hain, ya WhatsApp par share karein.</p>';
+  if(s.phone)b+='<button class="btn wa block" data-act="waReceipt" data-id="'+s.id+'">'+I.wa+' WhatsApp par receipt bhejein</button>';
   b+='<button class="btn danger block" data-act="delSale" data-id="'+s.id+'">'+I.trash+' Sale delete karein</button>';
   sheet('Bikri receipt',b);
 }
@@ -820,7 +823,7 @@ function openRep(id){
   b+='<div class="detail-kv"><span class="k">Baqi</span><span class="v tnum" style="color:var(--accent)">'+money(bal)+'</span></div>';
   if(r.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(r.note)+'</span></div>';
   b+='</div>';
-  if(r.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(r.phone)+'">'+I.copy+' Number copy karein</button>';
+  if(r.phone)b+='<div class="btn-row"><button class="btn block sm" data-act="copyNum" data-id="'+esc(r.phone)+'">'+I.copy+' Number copy</button><button class="btn block sm wa" data-act="waRepair" data-id="'+r.id+'">'+I.wa+' WhatsApp batayein</button></div>';
   b+='<div class="field"><label>Status</label><div class="seg" id="rStatus">';
   ['pending','working','done','delivered'].forEach(function(k){b+='<button class="'+(r.status===k?'on':'')+'" data-act="repStatus" data-id="'+r.id+'" data-st="'+k+'">'+REP[k].l+'</button>';});
   b+='</div></div>';
@@ -955,7 +958,7 @@ function openCust(id){
   if(bal>0)b+='<div class="detail-kv"><span class="k">Baqi (udhaar)</span><span class="v tnum" style="color:var(--accent)">'+money(bal)+'</span></div>';
   if(c.note)b+='<div class="detail-kv"><span class="k">Note</span><span class="v">'+esc(c.note)+'</span></div>';
   b+='</div>';
-  if(c.phone)b+='<button class="btn block sm" data-act="copyNum" data-id="'+esc(c.phone)+'">'+I.copy+' Number copy karein</button>';
+  if(c.phone)b+='<div class="btn-row"><button class="btn block sm" data-act="copyNum" data-id="'+esc(c.phone)+'">'+I.copy+' Number copy</button>'+(bal>0?'<button class="btn block sm wa" data-act="waRemind" data-kind="cust" data-id="'+c.id+'">'+I.wa+' WhatsApp reminder</button>':'')+'</div>';
   b+='<div class="section-t"><span>Repair history</span></div>';
   if(reps.length){b+='<div class="list">';reps.forEach(function(r){var st=REP[r.status]||REP.pending;b+='<div class="row"><div class="main"><div class="ttl">'+esc(r.device)+'</div><div class="meta">'+dateStr(r.ts)+(r.problem?' · '+esc(r.problem):'')+'</div></div><div class="right"><span class="pill '+st.c+'">'+st.l+'</span>'+(r.charges?'<div class="price tnum" style="font-size:13px">'+money(r.charges)+'</div>':'')+'</div></div>';});b+='</div>';}
   else b+='<p class="hint">Is customer ka koi repair record nahi.</p>';
@@ -1200,6 +1203,27 @@ function doRestore(d){
 /* confirm */
 function confirmSheet(title,msg,btnLabel,onYes){sheet(title,'<p style="color:var(--muted);font-size:14px;margin:4px 0 6px">'+esc(msg)+'</p><button class="btn danger block" id="cfYes">'+esc(btnLabel)+'</button><button class="btn ghost block" id="cfNo">Nahi</button>',function(root){root.querySelector('#cfYes').onclick=onYes;root.querySelector('#cfNo').onclick=closeSheet;});}
 function copyNum(n){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(n).then(function(){toast('Number copy: '+n,'good');},function(){toast('Number: '+n);});}else toast('Number: '+n);}
+function waNum(p){p=normPhone(p);if(!p)return '';if(p.indexOf('0')===0)p='92'+p.slice(1);else if(p.indexOf('92')!==0&&p.length===10)p='92'+p;return p;}
+function waOpen(phone,text){var p=waNum(phone);if(!p){toast('Sahi number nahi','err');return;}var url='https://wa.me/'+p+'?text='+encodeURIComponent(text);try{var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();toast('WhatsApp khul raha hai…','good');}catch(e){toast('WhatsApp nahi khula','err');}}
+function waRemind(kind,id){
+  var name,phone,amt;
+  if(kind==='ud'){var p=findUd(id);if(!p)return;name=p.name;phone=p.phone;amt=udBalance(id);}
+  else{var c=findCust(id);if(!c)return;name=c.name;phone=c.phone;amt=sum(custRepairs(c).filter(function(r){return r.status!=='delivered';}),function(r){return Number(r.charges||0)-Number(r.advance||0);});}
+  if(amt<=0){toast('Koi baqi nahi','err');return;}
+  var msg='Assalam o Alaikum'+(name?' '+name:'')+',\n'+shopName()+' ki taraf se yaad-dahani: aap ke zimme Rs '+Math.round(amt).toLocaleString('en-PK')+' baqi hai. Meharbani kar ke jald ada kar dein. Shukriya.'+(S.settings.shopPhone?'\n— '+S.settings.shopPhone:'');
+  waOpen(phone,msg);
+}
+function waRepair(id){
+  var r=findRep(id);if(!r)return;var bal=Number(r.charges||0)-Number(r.advance||0);
+  var line=r.status==='done'?'aap ka '+(r.device||'mobile')+' tayyar hai, dukaan se le ja sakte hain.':r.status==='delivered'?'shukriya, dobara zaroor aayein.':'aap ke '+(r.device||'mobile')+' par kaam chal raha hai.';
+  var msg='Assalam o Alaikum'+(r.customer?' '+r.customer:'')+',\n'+shopName()+': '+line+(bal>0&&r.status!=='delivered'?' Baqi Rs '+Math.round(bal).toLocaleString('en-PK')+'.':'');
+  waOpen(r.phone,msg);
+}
+function waReceipt(id){
+  var s=S.sales[idxOf(S.sales,id)];if(!s)return;
+  var msg=shopName()+'\nReceipt — '+dateStr(s.ts)+' '+clockTime(s.ts)+'\n'+s.items.map(function(it){return '• '+it.name+' x'+it.qty+' = Rs '+Math.round(it.price*it.qty).toLocaleString('en-PK');}).join('\n')+'\nTotal: Rs '+Math.round(s.total).toLocaleString('en-PK')+' ('+(s.pay||'Cash')+')\nShukriya!';
+  waOpen(s.phone,msg);
+}
 
 /* ===== events ===== */
 document.addEventListener('click',function(e){
@@ -1245,6 +1269,9 @@ document.addEventListener('click',function(e){
     case 'saveCust': saveCust(id);break;
     case 'delCust': confirmSheet('Customer delete?','Ye customer record delete ho jayega (repairs rahenge).','Haan, delete',function(){removeDoc('customers',id).then(function(){closeSheet();S.tab='customers';toast('Delete','good');render();});});break;
     case 'copyNum': copyNum(id);break;
+    case 'waRemind': waRemind(a.getAttribute('data-kind'),id);break;
+    case 'waRepair': waRepair(id);break;
+    case 'waReceipt': waReceipt(id);break;
     case 'rptRange': S.reportRange=id;render();break;
     case 'saveShop': saveSettings({shopName:$('st_name').value.trim()||'Ibrahim Mobile Traders',shopSub:$('st_sub').value.trim(),shopPhone:$('st_phone').value.trim()}).then(function(){applyBrand();toast('Save ho gaya','good');});break;
     case 'addCat': {var c=$('newCatInp').value.trim();if(!c){toast('Naam likhein','err');break;}if(getCats().indexOf(c)>-1){toast('Pehle se hai','err');break;}saveSettings({categories:getCats().concat([c])}).then(function(){toast('Category add','good');render();});break;}
