@@ -533,7 +533,7 @@ function panelForm(p){
     (p.id?'':'<button class="btn block" data-act="savePanelNext">'+I.plus+' Save + Agla daalein</button>')+
     (p.id?'<button class="btn danger block" data-act="delPanel" data-id="'+p.id+'">'+I.trash+' Delete karein</button>':'');
 }
-function openPanelForm(p){sheet(p?'Model edit karein':'Naya Model / Panel',panelForm(p));}
+function openPanelForm(p){sheet(p&&p.id?'Model edit karein':'Naya Model / Panel',panelForm(p));}
 function savePanel(id,next){
   var model=$('p_model').value.trim();if(!model){toast('Model likhein','err');return;}
   var loc=$('p_loc').value.trim();if(!loc){toast('Location likhein','err');return;}
@@ -693,7 +693,7 @@ function itemForm(it){
     (it.id?'':'<button class="btn block" data-act="saveItemNext">'+I.plus+' Save + Agla daalein</button>')+
     (it.id?'<button class="btn danger block" data-act="delItem" data-id="'+it.id+'">'+I.trash+' Item delete karein</button>':'');
 }
-function openItemForm(it){sheet(it?'Item edit karein':'Naya Item',itemForm(it));}
+function openItemForm(it){sheet(it&&it.id?'Item edit karein':'Naya Item',itemForm(it));}
 function saveItem(id,next){
   var name=$('f_name').value.trim();var price=Number($('f_price').value);
   if(!name){toast('Naam likhein','err');return;}
