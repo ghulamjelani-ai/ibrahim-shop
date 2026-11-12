@@ -314,11 +314,11 @@ var NETWORKS=['Jazz','Zong','Ufone','Telenor','Other'];
 var BRANDS=['Samsung','Infinix','Tecno','Vivo','Oppo','Xiaomi/Redmi','Realme','itel','QMobile','Nokia','Apple','Other'];
 var PANEL_KINDS=['Panel/LCD','Touch/Glass','Folder/Housing','Battery','Combo','Other'];
 /* store name -> state key */
-var SK={inventory:'inv',sales:'sales',repairs:'repairs',customers:'customers',txns:'txns',suppliers:'suppliers',supplierTx:'supplierTx',loadCos:'loadCos',loadTx:'loadTx',panels:'panels',accounts:'accounts',acctTx:'acctTx',udhaar:'udhaar',udhaarTx:'udhaarTx'};
+var SK={inventory:'inv',sales:'sales',repairs:'repairs',customers:'customers',txns:'txns',suppliers:'suppliers',supplierTx:'supplierTx',loadCos:'loadCos',loadTx:'loadTx',panels:'panels',accounts:'accounts',acctTx:'acctTx',udhaar:'udhaar',udhaarTx:'udhaarTx',expenses:'expenses'};
 var STORES=Object.keys(SK).concat(['settings']);
 
 var S={tab:'home',ready:false,storeErr:false,
-  inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],settings:{},
+  inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],expenses:[],settings:{},
   cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:'',svcFilter:'all'};
 var pendingSlip='';
 
@@ -349,7 +349,7 @@ $('scrim').onclick=closeSheet;$('sheetX').onclick=closeSheet;$('menuBtn').onclic
 var DB=null,USE_IDB=false;
 function openDB(){return new Promise(function(res,rej){
   if(!window.indexedDB){rej();return;}
-  var r;try{r=indexedDB.open('ibrahimShop',2);}catch(e){rej();return;}
+  var r;try{r=indexedDB.open('ibrahimShop',3);}catch(e){rej();return;}
   r.onupgradeneeded=function(e){var db=e.target.result;STORES.forEach(function(s){if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:'id'});});};
   r.onsuccess=function(e){DB=e.target.result;res();};
   r.onerror=function(){rej();};
@@ -430,7 +430,7 @@ function render(){
   updateBadge('repair',pendingRepairs().length);updateBadge('panels',S.panels.filter(function(p){return Number(p.qty)<=0;}).length);
   var v=$('view');
   if(!S.ready){v.innerHTML='<div class="center-load"><div class="spin"></div><div>App taiyar ho rahi hai…</div></div>';return;}
-  var map={home:viewHome,stock:viewStock,panels:viewPanels,sale:viewSale,repair:viewRepair,service:viewService,customers:viewCustomers,suppliers:viewSuppliers,loadcos:viewLoadCos,accounts:viewAccounts,udhaar:viewUdhaar,reports:viewReports,settings:viewSettings};
+  var map={home:viewHome,stock:viewStock,panels:viewPanels,sale:viewSale,repair:viewRepair,service:viewService,customers:viewCustomers,suppliers:viewSuppliers,loadcos:viewLoadCos,accounts:viewAccounts,udhaar:viewUdhaar,expenses:viewExpenses,reports:viewReports,settings:viewSettings};
   v.innerHTML=(map[S.tab]||viewHome)();
 }
 function updateBadge(tab,n){var btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(!btn)return;var b=btn.querySelector('.badge');if(n>0){if(!b){b=document.createElement('span');b.className='badge';btn.appendChild(b);}b.textContent=n>99?'99+':n;}else if(b)b.remove();}
@@ -443,6 +443,7 @@ function openMore(){
   var b='<button class="menu-item" data-act="go" data-id="stock"><div class="mi">'+I.box+'</div><div><b>Stock — Accessories</b><span>Maal ki quantity, location aur rate</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers</b><span>Naam, number aur repair history</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="udhaar"><div class="mi">'+I.coin+'</div><div><b>Udhaar Khata</b><span>Kis se lena ya dena — slip ke sath</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="expenses"><div class="mi">'+I.coin+'</div><div><b>Kharchay (Expenses)</b><span>Kiraya, bijli waghera — net munafa ke liye</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="accounts"><div class="mi">'+I.wallet+'</div><div><b>Accounts</b><span>Har account alag — JazzCash, Easypaisa</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="suppliers"><div class="mi">'+I.truck+'</div><div><b>Supplier — Dena hai</b><span>Jin se maal liya, unka baqi aur slip</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="loadcos"><div class="mi">'+I.tower+'</div><div><b>Load Company / Rep</b><span>Representative aata hai — paisa, load, baqi</span></div></button>'+
@@ -673,6 +674,36 @@ function saveUdTx(pid,type){
   var amt=Number($('ux_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
   save('udhaarTx',{id:uid(),pid:pid,type:type,amount:amt,note:$('ux_note').value.trim(),slip:pendingSlip||'',ts:Date.now()}).then(function(){toast('Save ho gaya','good');render();openUd(pid);});
 }
+
+/* ---- EXPENSES (kharchay) ---- */
+var EXP_CATS=['Kiraya','Bijli','Internet','Mazdoori','Chai/Khana','Transport','Bill','Doosra'];
+function findExp(id){return S.expenses[idxOf(S.expenses,id)]||null;}
+function viewExpenses(){
+  var list=S.expenses.slice().sort(function(a,b){return b.ts-a.ts;});
+  var todayE=sum(S.expenses.filter(function(e){return isToday(e.ts);}),function(e){return e.amount;});
+  var monthE=sum(S.expenses.filter(function(e){return e.ts>=startOfMonth();}),function(e){return e.amount;});
+  var h='<div class="view">'+subHead('Kharchay (Expenses)');
+  h+='<div class="tiles" style="margin-top:-4px">'+tile('a',I.coin,'Aaj Kharcha',money(todayE),'')+tile('',I.coin,'Is Mahine',money(monthE),'')+'</div>';
+  h+='<button class="btn pri block sm" data-act="newExp">'+I.plus+' Naya kharcha</button>';
+  if(!S.expenses.length){h+=empty(I.coin,'Koi kharcha nahi','Dukaan ke kharchay (kiraya, bijli, chai, mazdoori) yahan likhein — Reports mein net munafa inke baad nikal aayega.');}
+  else{h+='<div class="list">';list.slice(0,80).forEach(function(e){h+='<button class="row tap" data-act="openExp" data-id="'+e.id+'"><div class="avatar">'+I.coin+'</div><div class="main"><div class="ttl">'+esc(e.title||e.cat||'Kharcha')+'</div><div class="meta">'+(e.cat?'<span class="pill">'+esc(e.cat)+'</span>':'')+'<span>'+dateStr(e.ts)+' · '+clockTime(e.ts)+'</span></div></div><div class="right"><div class="price tnum" style="color:var(--danger)">−'+money(e.amount)+'</div></div></button>';});h+='</div>';}
+  h+='</div>';return h;
+}
+function expForm(e){
+  e=e||{};
+  var co=EXP_CATS.map(function(c){return '<option'+(e.cat===c?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  return '<div class="field"><label>Kis cheez ka kharcha</label><select id="e_cat">'+co+'</select></div>'+
+    '<div class="field"><label>Tafseel (optional)</label><input id="e_title" value="'+esc(e.title||'')+'" placeholder="jaise November kiraya"></div>'+
+    '<div class="field"><label>Amount Rs *</label><input id="e_amt" type="number" inputmode="numeric" value="'+(e.amount!=null?e.amount:'')+'" placeholder="0" autofocus></div>'+
+    '<button class="btn pri block" data-act="saveExp" data-id="'+(e.id||'')+'">'+I.check+' '+(e.id?'Update karein':'Save karein')+'</button>'+
+    (e.id?'<button class="btn danger block" data-act="delExp" data-id="'+e.id+'">'+I.trash+' Delete</button>':'');
+}
+function saveExp(id){
+  var amt=Number($('e_amt').value);if(!(amt>0)){toast('Amount likhein','err');return;}
+  var old=id?findExp(id):null;
+  save('expenses',{id:id||uid(),cat:$('e_cat').value,title:$('e_title').value.trim(),amount:amt,ts:old?old.ts:Date.now()}).then(function(){closeSheet();S.tab='expenses';toast(id?'Update ho gaya':'Kharcha save','good');render();});
+}
+function openExp(id){var e=findExp(id);if(e)sheet('Kharcha edit',expForm(e));}
 
 /* ---- STOCK ---- */
 function viewStock(){
@@ -1134,15 +1165,19 @@ function viewReports(){
   var comm=sum(txns,function(t){return t.commission;});
   var vol=sum(txns,function(t){return t.amount;});
   var totalIncome=saleTotal+repIncome+comm;
+  var exp=sum(S.expenses.filter(function(e){return inRange(e.ts,rng);}),function(e){return e.amount;});
+  var net=profit+repIncome+comm-exp;
   var h='<div class="view">'+subHead('Reports (Hisaab)');
   h+='<div class="chips" style="margin-top:-4px">';[['today','Aaj'],['month','Is Mahine'],['all','Sab']].forEach(function(x){h+='<button class="chip'+(rng===x[0]?' on':'')+'" data-act="rptRange" data-id="'+x[0]+'">'+x[1]+'</button>';});h+='</div>';
   h+='<div class="tiles">'+tile('p',I.cash,'Kul Aamdani',money(totalIncome),'sale+repair+comm')+tile('a',I.coin,'Sale Profit',money(profit),'munafa')+'</div>';
+  h+='<div class="tile full" style="background:'+(net>=0?'var(--success-soft)':'var(--danger-soft)')+';border-color:transparent"><div class="lbl" style="color:'+(net>=0?'var(--success)':'var(--danger)')+'">'+I.coin+'Net Munafa (kharchay ke baad)</div><div class="val tnum" style="color:'+(net>=0?'var(--success)':'var(--danger)')+'">'+money(net)+'</div></div>';
   h+=salesChart();
   h+='<div class="card pad">';
   h+=repLine('Sale',money(saleTotal),sales.length+' sale');
   h+=repLine('Sale ka profit',money(profit),'');
   h+=repLine('Repair aamdani',money(repIncome),repsDone.length+' delivered');
   h+=repLine('Commission',money(comm),txns.length+' lenden');
+  h+=repLine('Kharchay (expenses)',money(exp),'');
   h+=repLine('Transfer/Load volume',money(vol),'');
   h+='</div>';
   var loads=txns.filter(function(t){return t.type==='load';});
@@ -1406,6 +1441,10 @@ document.addEventListener('click',function(e){
     case 'delUdTx': {var udp=a.getAttribute('data-pid');confirmSheet('Entry delete?','Ye entry delete ho jayegi.','Haan, delete',function(){removeDoc('udhaarTx',id).then(function(){closeSheet();toast('Delete','good');render();if(udp)openUd(udp);});});break;}
     case 'setPin': {var v=($('pinInp').value||'').replace(/\D/g,'');if(v.length<4){toast('Kam az kam 4 digit','err');break;}saveSettings({lockPin:v}).then(function(){toast('App lock laga diya','good');render();});break;}
     case 'removePin': confirmSheet('Lock hatayein?','App lock hat jayega — ab PIN nahi maangega.','Haan, hatayein',function(){saveSettings({lockPin:''}).then(function(){closeSheet();toast('Lock hata diya','good');render();});});break;
+    case 'newExp': sheet('Naya Kharcha',expForm(null));break;
+    case 'openExp': openExp(id);break;
+    case 'saveExp': saveExp(id);break;
+    case 'delExp': confirmSheet('Kharcha delete?','Ye kharcha record delete ho jayega.','Haan, delete',function(){removeDoc('expenses',id).then(function(){closeSheet();S.tab='expenses';toast('Delete','good');render();});});break;
     case 'backup': backup();break;
     case 'restore': restore();break;
   }
