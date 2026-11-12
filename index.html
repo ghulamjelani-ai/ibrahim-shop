@@ -244,6 +244,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-left:max(16
 <div class="appbar"><div class="appbar-in">
   <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="10" y1="18" x2="14" y2="18"/></svg></div>
   <div class="brand"><h1 id="brandName">Ibrahim Mobile Traders</h1><p id="brandSub">Mobile · Accessories · Easyload</p></div>
+  <button class="hbtn" id="searchBtn" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></button>
   <button class="hbtn" id="menuBtn" aria-label="Menu"><span class="pdot" id="pdot"></span><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 </div></div>
 
@@ -343,7 +344,7 @@ function toast(msg,kind){var t=$('toast');t.textContent=msg;t.className='toast o
 
 function sheet(title,bodyHTML,onMount){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=bodyHTML;$('scrim').classList.add('on');$('sheet').classList.add('on');if(onMount)onMount($('sheetBody'));}
 function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');}
-$('scrim').onclick=closeSheet;$('sheetX').onclick=closeSheet;$('menuBtn').onclick=openMore;
+$('scrim').onclick=closeSheet;$('sheetX').onclick=closeSheet;$('menuBtn').onclick=openMore;$('searchBtn').onclick=openSearch;
 
 /* ===== storage: IndexedDB with localStorage fallback ===== */
 var DB=null,USE_IDB=false;
@@ -440,6 +441,37 @@ function subHead(title){return '<button class="back" data-act="go" data-id="home
 function empty(ic,title,msg){return '<div class="empty"><div class="ic">'+ic+'</div><b>'+esc(title)+'</b><p>'+esc(msg)+'</p></div>';}
 function tile(cls,ic,lbl,val,sub){return '<div class="tile '+cls+'"><div class="lbl">'+ic+esc(lbl)+'</div><div class="val tnum">'+(typeof val==='number'?num(val):esc(val))+(sub?' <small>'+esc(sub)+'</small>':'')+'</div></div>';}
 
+function openSearch(){
+  var body='<div class="search">'+I.search+'<input id="gSearch" placeholder="Kuch bhi dhoondein — model, item, customer, number…" autofocus></div><div id="gResults" class="list" style="margin-top:6px"></div>';
+  sheet('Search',body,function(root){
+    var inp=root.querySelector('#gSearch');var out=root.querySelector('#gResults');
+    function draw(q){
+      q=(q||'').trim();var ql=q.toLowerCase();var np=normPhone(q);
+      if(!q){out.innerHTML='<p class="hint" style="text-align:center;padding:14px">Likhna shuru karein — model, item ka naam, customer ya number.</p>';return;}
+      var h='',n=0;
+      var pm=S.panels.filter(function(p){return (p.model||'').toLowerCase().indexOf(ql)>-1||(p.brand||'').toLowerCase().indexOf(ql)>-1||(p.loc||'').toLowerCase().indexOf(ql)>-1;}).slice(0,6);
+      if(pm.length){h+='<div class="section-t"><span>Panels / Models</span></div>';pm.forEach(function(p){var o=Number(p.qty)<=0;h+='<button class="row tap" data-gs="panel" data-id="'+p.id+'"><div class="avatar">'+I.grid+'</div><div class="main"><div class="ttl">'+esc(p.model)+'</div><div class="meta"><span class="pill loc">'+I.pin+esc(p.loc||'—')+'</span>'+(p.brand?'<span class="pill">'+esc(p.brand)+'</span>':'')+'</div></div><div class="right"><span class="pill '+(o?'danger':'ok')+'">'+(o?'Khatam':num(p.qty)+' pcs')+'</span></div></button>';n++;});}
+      var im=S.inv.filter(function(i){return (i.name||'').toLowerCase().indexOf(ql)>-1||(i.loc||'').toLowerCase().indexOf(ql)>-1;}).slice(0,6);
+      if(im.length){h+='<div class="section-t"><span>Stock</span></div>';im.forEach(function(i){h+='<button class="row tap" data-gs="item" data-id="'+i.id+'"><div class="avatar">'+I.box+'</div><div class="main"><div class="ttl">'+esc(i.name)+'</div><div class="meta"><span class="pill loc">'+I.pin+esc(i.loc||'—')+'</span></div></div><div class="right"><div class="price tnum">'+money(i.price)+'</div></div></button>';n++;});}
+      var cm=S.customers.filter(function(c){return (c.name||'').toLowerCase().indexOf(ql)>-1||(np&&normPhone(c.phone).indexOf(np)>-1);}).slice(0,6);
+      if(cm.length){h+='<div class="section-t"><span>Customers</span></div>';cm.forEach(function(c){h+='<button class="row tap" data-gs="cust" data-id="'+c.id+'"><div class="avatar">'+esc(initial(c.name))+'</div><div class="main"><div class="ttl">'+esc(c.name||'—')+'</div><div class="meta">'+(c.phone?esc(c.phone):'')+'</div></div></button>';n++;});}
+      var rm=S.repairs.filter(function(r){return (r.device||'').toLowerCase().indexOf(ql)>-1||(r.customer||'').toLowerCase().indexOf(ql)>-1||(np&&normPhone(r.phone).indexOf(np)>-1);}).slice(0,6);
+      if(rm.length){h+='<div class="section-t"><span>Repairs</span></div>';rm.forEach(function(r){var st=REP[r.status]||REP.pending;h+='<button class="row tap" data-gs="rep" data-id="'+r.id+'"><div class="avatar">'+I.wrench+'</div><div class="main"><div class="ttl">'+esc(r.device||'')+'</div><div class="meta">'+esc(r.customer||'')+'</div></div><div class="right"><span class="pill '+st.c+'">'+st.l+'</span></div></button>';n++;});}
+      if(isAdmin()){var um=S.udhaar.filter(function(p){return (p.name||'').toLowerCase().indexOf(ql)>-1||(np&&normPhone(p.phone).indexOf(np)>-1);}).slice(0,6);if(um.length){h+='<div class="section-t"><span>Udhaar</span></div>';um.forEach(function(p){var bal=udBalance(p.id);h+='<button class="row tap" data-gs="ud" data-id="'+p.id+'"><div class="avatar">'+esc(initial(p.name))+'</div><div class="main"><div class="ttl">'+esc(p.name)+'</div></div><div class="right"><div class="price tnum" style="color:'+(bal>0?'var(--success)':'var(--danger)')+'">'+money(Math.abs(bal))+'</div></div></button>';n++;});}}
+      if(!n)h='<p class="hint" style="text-align:center;padding:16px">"'+esc(q)+'" kuch nahi mila.</p>';
+      out.innerHTML=h;
+    }
+    draw('');
+    inp.addEventListener('input',function(e){draw(e.target.value);});
+    out.addEventListener('click',function(e){var el=e.target.closest('[data-gs]');if(!el)return;var ty=el.getAttribute('data-gs'),gid=el.getAttribute('data-id');closeSheet();
+      if(ty==='panel'){var p=findPanel(gid);S.tab='panels';S.panelQ=p?p.model:'';render();}
+      else if(ty==='item'){var it=findInv(gid);S.tab='stock';S.stockQ=it?it.name:'';render();}
+      else if(ty==='cust')openCust(gid);
+      else if(ty==='rep')openRep(gid);
+      else if(ty==='ud')openUd(gid);
+    });
+  });
+}
 function openMore(){
   var b='<button class="menu-item" data-act="go" data-id="stock"><div class="mi">'+I.box+'</div><div><b>Stock — Accessories</b><span>'+(isAdmin()?'Maal ki quantity, location aur rate':'Maal dhoondein (sirf dekhna)')+'</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers</b><span>Naam, number aur repair history</span></div></button>';
