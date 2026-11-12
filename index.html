@@ -439,7 +439,7 @@ function viewHome(){
   var h='<div class="view">';
   h+='<div class="vhead"><div><h2>Assalam-o-Alaikum 👋</h2><div class="sub">'+esc(todayStr())+'</div></div></div>';
   h+='<div class="tiles">';
-  h+=tile('p',I.cart,'Aaj ki Bikri',money(saleTotal),ts.length+' sale');
+  h+=tile('p',I.cart,'Aaj ki Sale',money(saleTotal),ts.length+' sale');
   h+=tile('a',I.coin,'Aaj Commission',money(comm),tt.length+' transaction');
   h+=tile('',I.wrench,'Pending Repair',pend.length,'kaam baqi');
   h+=tile('',I.alert,'Low Stock',low.length,'item kam');
@@ -465,7 +465,7 @@ function viewHome(){
 }
 function recentActivity(){
   var a=[];
-  todaySales().forEach(function(s){a.push({ts:s.ts,type:'sale',title:(s.items.length)+' item bikri',amt:s.total});});
+  todaySales().forEach(function(s){a.push({ts:s.ts,type:'sale',title:(s.items.length)+' item sale',amt:s.total});});
   todayTxns().forEach(function(t){a.push({ts:t.ts,type:'txn',title:t.service+' '+(t.type==='send'?'Send':t.type==='receive'?'Receive':'Load'),amt:t.amount,comm:t.commission});});
   S.repairs.filter(function(r){return isToday(r.ts);}).forEach(function(r){a.push({ts:r.ts,type:'rep',title:(r.device||'Repair')+' — '+(r.customer||''),amt:r.charges});});
   a.sort(function(x,y){return y.ts-x.ts;});return a.slice(0,8);
@@ -526,19 +526,20 @@ function panelForm(p){
   return '<div class="field"><label>Model * (jaise Samsung A12)</label><input id="p_model" value="'+esc(p.model||'')+'" placeholder="Model ya set ka naam"></div>'+
     '<div class="two"><div class="field"><label>Brand</label><select id="p_brand">'+bo+'</select></div><div class="field"><label>Kism</label><select id="p_kind">'+ko+'</select></div></div>'+
     '<div class="two"><div class="field"><label>Location (rack/box) *</label><input id="p_loc" value="'+esc(p.loc||'')+'" placeholder="jaise Rack B-2"></div><div class="field"><label>Quantity</label><input id="p_qty" type="number" inputmode="numeric" value="'+(p.qty!=null?p.qty:'')+'" placeholder="0"></div></div>'+
-    '<div class="two"><div class="field"><label>Kharid Rs</label><input id="p_cost" type="number" inputmode="numeric" value="'+(p.cost!=null?p.cost:'')+'" placeholder="0"></div><div class="field"><label>Bikri Rate Rs</label><input id="p_price" type="number" inputmode="numeric" value="'+(p.price!=null?p.price:'')+'" placeholder="0"></div></div>'+
+    '<div class="two"><div class="field"><label>Kharid Rs</label><input id="p_cost" type="number" inputmode="numeric" value="'+(p.cost!=null?p.cost:'')+'" placeholder="0"></div><div class="field"><label>Sale Rate Rs</label><input id="p_price" type="number" inputmode="numeric" value="'+(p.price!=null?p.price:'')+'" placeholder="0"></div></div>'+
     '<div class="field"><label>Note</label><input id="p_note" value="'+esc(p.note||'')+'" placeholder="koi baat…"></div>'+
     photoField('Photo (optional)')+
     '<button class="btn pri block" data-act="savePanel" data-id="'+(p.id||'')+'">'+I.check+' '+(p.id?'Update karein':'Add karein')+'</button>'+
+    (p.id?'':'<button class="btn block" data-act="savePanelNext">'+I.plus+' Save + Agla daalein</button>')+
     (p.id?'<button class="btn danger block" data-act="delPanel" data-id="'+p.id+'">'+I.trash+' Delete karein</button>':'');
 }
 function openPanelForm(p){sheet(p?'Model edit karein':'Naya Model / Panel',panelForm(p));}
-function savePanel(id){
+function savePanel(id,next){
   var model=$('p_model').value.trim();if(!model){toast('Model likhein','err');return;}
   var loc=$('p_loc').value.trim();if(!loc){toast('Location likhein','err');return;}
   var old=id?findPanel(id):null;
   var obj={id:id||uid(),model:model,brand:$('p_brand').value,kind:$('p_kind').value,loc:loc,qty:Math.max(0,Math.floor(Number($('p_qty').value)||0)),cost:Math.max(0,Number($('p_cost').value)||0),price:Math.max(0,Number($('p_price').value)||0),note:$('p_note').value.trim(),photo:pendingSlip||'',ts:old?old.ts:Date.now()};
-  save('panels',obj).then(function(){closeSheet();toast(id?'Update ho gaya':'Add ho gaya','good');render();});
+  save('panels',obj).then(function(){toast(id?'Update ho gaya':'Add ho gaya — agla daalein','good');render();if(next&&!id){openPanelForm({brand:obj.brand,kind:obj.kind,loc:obj.loc});var el=$('p_model');if(el)el.focus();}else closeSheet();});
 }
 
 /* ---- ACCOUNTS (JazzCash / Easypaisa — each separate) ---- */
@@ -685,29 +686,30 @@ function itemForm(it){
     '<div class="two"><div class="field"><label>Location (shelf/box)</label><input id="f_loc" placeholder="e.g. Rack A-3" value="'+esc(it.loc||'')+'"></div>'+
     '<div class="field"><label>Quantity (pcs)</label><input id="f_qty" type="number" inputmode="numeric" value="'+(it.qty!=null?it.qty:'')+'" placeholder="0"></div></div>'+
     '<div class="two"><div class="field"><label>Kharid (cost) Rs</label><input id="f_cost" type="number" inputmode="numeric" value="'+(it.cost!=null?it.cost:'')+'" placeholder="0"></div>'+
-    '<div class="field"><label>Bikri Rate Rs *</label><input id="f_price" type="number" inputmode="numeric" value="'+(it.price!=null?it.price:'')+'" placeholder="0"></div></div>'+
+    '<div class="field"><label>Sale Rate Rs *</label><input id="f_price" type="number" inputmode="numeric" value="'+(it.price!=null?it.price:'')+'" placeholder="0"></div></div>'+
     '<div class="field"><label>Low stock pe alert (pcs)</label><input id="f_low" type="number" inputmode="numeric" value="'+(it.lowAt!=null?it.lowAt:2)+'"></div>'+
     photoField('Item ki photo (optional)')+
     '<button class="btn pri block" data-act="saveItem" data-id="'+(it.id||'')+'">'+I.check+' '+(it.id?'Update karein':'Stock mein add karein')+'</button>'+
+    (it.id?'':'<button class="btn block" data-act="saveItemNext">'+I.plus+' Save + Agla daalein</button>')+
     (it.id?'<button class="btn danger block" data-act="delItem" data-id="'+it.id+'">'+I.trash+' Item delete karein</button>':'');
 }
 function openItemForm(it){sheet(it?'Item edit karein':'Naya Item',itemForm(it));}
-function saveItem(id){
+function saveItem(id,next){
   var name=$('f_name').value.trim();var price=Number($('f_price').value);
   if(!name){toast('Naam likhein','err');return;}
-  if(!(price>=0)||$('f_price').value===''){toast('Bikri rate likhein','err');return;}
+  if(!(price>=0)||$('f_price').value===''){toast('Sale rate likhein','err');return;}
   var cat=$('f_cat').value;
   if(cat==='__new__'){cat=$('f_newcat').value.trim();if(!cat){toast('Nai category ka naam likhein','err');return;}if(getCats().indexOf(cat)<0)saveSettings({categories:getCats().concat([cat])});}
   var old=id?findInv(id):null;
   var obj={id:id||uid(),name:name,cat:cat,loc:$('f_loc').value.trim(),qty:Math.max(0,Math.floor(Number($('f_qty').value)||0)),lowAt:Math.max(0,Math.floor(Number($('f_low').value)||0)),cost:Math.max(0,Number($('f_cost').value)||0),price:Math.max(0,price),photo:pendingSlip||'',ts:old?old.ts||Date.now():Date.now()};
-  save('inventory',obj).then(function(){closeSheet();toast(id?'Update ho gaya':'Stock mein add ho gaya','good');render();});
+  save('inventory',obj).then(function(){toast(id?'Update ho gaya':'Add ho gaya — agla daalein','good');render();if(next&&!id){openItemForm({cat:obj.cat,loc:obj.loc,lowAt:obj.lowAt});var el=$('f_name');if(el)el.focus();}else closeSheet();});
 }
 
 /* ---- SALE ---- */
 function viewSale(){
   var total=sum(S.cart,function(l){return l.price*l.qty;});
   var h='<div class="view">';
-  h+='<div class="vhead"><div><h2>Sale (Bikri)</h2><div class="sub">Item add karein, total khud nikal aayega</div></div></div>';
+  h+='<div class="vhead"><div><h2>Sale</h2><div class="sub">Item add karein, total khud nikal aayega</div></div></div>';
   h+='<div class="card pad">';
   h+='<div class="btn-row"><button class="btn pri block" data-act="pickItem">'+I.search+' Stock se item</button><button class="btn block" data-act="customItem">'+I.plus+' Khula item</button></div>';
   if(!S.cart.length){h+='<div style="padding:18px 0;text-align:center;color:var(--muted);font-size:13px">Abhi cart khali hai. Upar se item add karein.</div>';}
@@ -719,14 +721,14 @@ function viewSale(){
     ['Cash','Easypaisa','JazzCash','Udhaar'].forEach(function(p,i){h+='<button class="'+(i===0?'on':'')+'" data-pay="'+p+'">'+p+'</button>';});
     h+='</div></div>';
     h+='<div class="field" style="margin-top:10px"><label>Customer number (optional)</label><input id="salePhone" type="tel" inputmode="tel" placeholder="03xx-xxxxxxx"></div>';
-    h+='<button class="btn pri block" style="margin-top:12px" data-act="checkout">'+I.check+' Bikri Mukammal — '+money(total)+'</button>';
+    h+='<button class="btn pri block" style="margin-top:12px" data-act="checkout">'+I.check+' Sale Complete — '+money(total)+'</button>';
     h+='<button class="btn ghost block sm" data-act="clearCart">Cart khali karein</button>';
   }
   h+='</div>';
   var ts=todaySales();
-  h+='<div class="section-t"><span>Aaj ki bikri ('+ts.length+')</span></div>';
+  h+='<div class="section-t"><span>Aaj ki sale ('+ts.length+')</span></div>';
   if(ts.length){h+='<div class="list">';ts.slice().sort(function(a,b){return b.ts-a.ts;}).forEach(function(s){h+='<button class="row tap" data-act="viewSale" data-id="'+s.id+'"><div class="avatar">'+I.cart+'</div><div class="main"><div class="ttl">'+s.items.length+' item · '+esc(s.pay||'Cash')+'</div><div class="meta">'+clockTime(s.ts)+'</div></div><div class="right"><div class="price tnum">'+money(s.total)+'</div></div></button>';});h+='</div>';}
-  else h+=empty(I.cart,'Aaj koi sale nahi','Pehli bikri complete karte hi yahan list ho jayegi.');
+  else h+=empty(I.cart,'Aaj koi sale nahi','Pehli sale complete karte hi yahan list ho jayegi.');
   h+='</div>';return h;
 }
 function pickItemSheet(){
@@ -763,7 +765,7 @@ function checkout(){
   var sale={id:uid(),ts:Date.now(),items:items,total:total,pay:pay||'Cash',phone:phone};
   var chain=Promise.resolve();
   S.cart.filter(function(l){return l.itemId;}).forEach(function(l){var it=findInv(l.itemId);if(it){it.qty=Math.max(0,Number(it.qty)-l.qty);chain=chain.then(function(){return save('inventory',it);});}});
-  chain.then(function(){return save('sales',sale);}).then(function(){if(phone)upsertCustomer('',phone);S.cart=[];toast('Bikri mukammal — '+money(total),'good');S.tab='sale';render();}).catch(function(){toast('Masla hua','err');});
+  chain.then(function(){return save('sales',sale);}).then(function(){if(phone)upsertCustomer('',phone);S.cart=[];toast('Sale complete — '+money(total),'good');S.tab='sale';render();}).catch(function(){toast('Masla hua','err');});
 }
 function saleDetail(id){
   var s=S.sales[idxOf(S.sales,id)];if(!s)return;
@@ -775,7 +777,7 @@ function saleDetail(id){
   b+='</div><p class="hint" style="text-align:center">Receipt ki photo khinch kar bhej sakte hain, ya WhatsApp par share karein.</p>';
   if(s.phone)b+='<button class="btn wa block" data-act="waReceipt" data-id="'+s.id+'">'+I.wa+' WhatsApp par receipt bhejein</button>';
   b+='<button class="btn danger block" data-act="delSale" data-id="'+s.id+'">'+I.trash+' Sale delete karein</button>';
-  sheet('Bikri receipt',b);
+  sheet('Sale receipt',b);
 }
 
 /* ---- REPAIR ---- */
@@ -876,7 +878,7 @@ function viewService(){
   if(list.length){h+='<div class="list">';list.forEach(function(t){h+=txnRow(t);});h+='</div>';}
   else h+=empty(I.coin,'Koi transaction nahi','Upar se Receive / Send / Load karte hi yahan aa jayega — customer, account aur time ke sath.');
   h+='<div class="section-t"><span>Available load</span></div>';
-  h+='<div class="tile full" style="background:var(--blue-soft);border-color:transparent"><div class="lbl" style="color:var(--blue)">'+I.tower+'Mere paas available load</div><div class="val tnum" style="color:var(--blue)">'+money(availableLoad())+' <small>company se liya − customers ko becha</small></div></div>';
+  h+='<div class="tile full" style="background:var(--blue-soft);border-color:transparent"><div class="lbl" style="color:var(--blue)">'+I.tower+'Mere paas available load</div><div class="val tnum" style="color:var(--blue)">'+money(availableLoad())+' <small>company se liya − customer sale</small></div></div>';
   h+=loadSummaryCard();
   h+='</div>';return h;
 }
@@ -1115,7 +1117,7 @@ function viewReports(){
   h+='<div class="tiles">'+tile('p',I.cash,'Kul Aamdani',money(totalIncome),'sale+repair+comm')+tile('a',I.coin,'Sale Profit',money(profit),'munafa')+'</div>';
   h+=salesChart();
   h+='<div class="card pad">';
-  h+=repLine('Bikri (sale)',money(saleTotal),sales.length+' sale');
+  h+=repLine('Sale',money(saleTotal),sales.length+' sale');
   h+=repLine('Sale ka profit',money(profit),'');
   h+=repLine('Repair aamdani',money(repIncome),repsDone.length+' delivered');
   h+=repLine('Commission',money(comm),txns.length+' lenden');
@@ -1126,7 +1128,7 @@ function viewReports(){
     var nets=['Jazz','Zong','Ufone','Telenor'];if(loads.some(function(l){return ldNet(l)==='Other';}))nets.push('Other');
     h+='<div class="section-t"><span>Customer load — network wise</span></div><div class="card pad">';
     nets.forEach(function(n){var v=sum(loads.filter(function(l){return ldNet(l)===n;}),function(a){return a.amount;});h+=repLine(n,money(v),'');});
-    h+=repLine('Total load becha',money(sum(loads,function(a){return a.amount;})),loads.length+' baar');
+    h+=repLine('Total load sale',money(sum(loads,function(a){return a.amount;})),loads.length+' baar');
     h+='</div>';
   }
   h+='<div class="section-t"><span>Khata summary</span></div><div class="card pad">';
@@ -1136,7 +1138,7 @@ function viewReports(){
   h+=repLine('Accounts mein total',money(totalAcct()),'');
   h+=repLine('Available load',money(availableLoad()),'');
   h+='</div>';
-  h+='<p class="hint">Note: Repair aamdani sirf "De diya" (delivered) kaam se ginti hai. Profit = bikri rate − kharid cost.</p>';
+  h+='<p class="hint">Note: Repair aamdani sirf "De diya" (delivered) kaam se ginti hai. Profit = sale rate − kharid cost.</p>';
   h+='</div>';return h;
 }
 function repLine(k,v,sub){return '<div class="detail-kv"><span class="k">'+esc(k)+(sub?' <span class="hint">· '+esc(sub)+'</span>':'')+'</span><span class="v tnum">'+v+'</span></div>';}
@@ -1256,7 +1258,7 @@ function salesChart(){
   var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var bars=days.map(function(x){var hh=Math.round(x.tot/max*100);return '<div class="bar-col"><div class="bar-wrap"><div class="bar" style="height:'+(x.tot>0?Math.max(hh,4):2)+'%" title="'+money(x.tot)+'"></div></div><div class="bar-lbl">'+dn[x.d.getDay()]+'</div></div>';}).join('');
   var wk=sum(days,function(x){return x.tot;});
-  return '<div class="section-t"><span>Pichle 7 din — bikri</span><span class="tnum" style="color:var(--primary-ink);font-weight:700">'+money(wk)+'</span></div><div class="card pad"><div class="barchart">'+bars+'</div></div>';
+  return '<div class="section-t"><span>Pichle 7 din — Sale</span><span class="tnum" style="color:var(--primary-ink);font-weight:700">'+money(wk)+'</span></div><div class="card pad"><div class="barchart">'+bars+'</div></div>';
 }
 
 /* ===== events ===== */
@@ -1272,6 +1274,7 @@ document.addEventListener('click',function(e){
     case 'newItem': openItemForm(null);break;
     case 'editItem': openItemForm(findInv(id));break;
     case 'saveItem': saveItem(id);break;
+    case 'saveItemNext': saveItem('',true);break;
     case 'delItem': confirmSheet('Item delete?','"'+((findInv(id)||{}).name||'')+'" stock se nikal jayega.','Haan, delete',function(){removeDoc('inventory',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
     case 'cat': S.stockCat=id;render();break;
     case 'pickItem': pickItemSheet();break;
@@ -1282,7 +1285,7 @@ document.addEventListener('click',function(e){
     case 'clearCart': S.cart=[];render();break;
     case 'checkout': checkout();break;
     case 'viewSale': saleDetail(id);break;
-    case 'delSale': confirmSheet('Sale delete?','Ye bikri record delete ho jayegi. Stock wapas nahi badhega.','Haan, delete',function(){removeDoc('sales',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
+    case 'delSale': confirmSheet('Sale delete?','Ye sale record delete ho jayegi. Stock wapas nahi badhega.','Haan, delete',function(){removeDoc('sales',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
     case 'newRep': openRepForm(null);break;
     case 'openRep': openRep(id);break;
     case 'editRep': openRepForm(findRep(id));break;
@@ -1336,6 +1339,7 @@ document.addEventListener('click',function(e){
     case 'newPanel': openPanelForm(null);break;
     case 'editPanel': openPanelForm(findPanel(id));break;
     case 'savePanel': savePanel(id);break;
+    case 'savePanelNext': savePanel('',true);break;
     case 'delPanel': confirmSheet('Model delete?','Ye model/panel record delete ho jayega.','Haan, delete',function(){removeDoc('panels',id).then(function(){closeSheet();toast('Delete','good');render();});});break;
     case 'pbrand': S.panelBrand=id;render();break;
     case 'newAcct': sheet('Naya Account',acctForm(null));break;
