@@ -319,7 +319,7 @@ var STORES=Object.keys(SK).concat(['settings']);
 
 var S={tab:'home',ready:false,storeErr:false,
   inv:[],sales:[],repairs:[],customers:[],txns:[],suppliers:[],supplierTx:[],loadCos:[],loadTx:[],panels:[],accounts:[],acctTx:[],udhaar:[],udhaarTx:[],expenses:[],settings:{},
-  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:'',svcFilter:'all'};
+  cart:[],stockQ:'',stockCat:'all',repFilter:'all',custQ:'',reportRange:'today',panelQ:'',panelBrand:'all',udQ:'',svcFilter:'all',role:'admin'};
 var pendingSlip='';
 
 function $(id){return document.getElementById(id);}
@@ -391,7 +391,7 @@ function saveSettings(patch){
 function initStore(){
   openDB().then(function(){USE_IDB=true;return loadAll();},function(){USE_IDB=false;return loadAll();}).then(finishInit,function(){S.storeErr=true;USE_IDB=false;loadAll().then(finishInit);});
 }
-function finishInit(){S.ready=true;applyBrand();setStatus();render();if(S.settings&&S.settings.lockPin)showLock();}
+function finishInit(){S.ready=true;applyBrand();setStatus();render();if(adminPinVal())showLock();}
 function applyBrand(){$('brandName').textContent=shopName();$('brandSub').textContent=shopSub();}
 function setStatus(){var d=$('pdot');if(d)d.className='pdot'+(S.storeErr?' bad':'');}
 
@@ -426,6 +426,7 @@ function coPendingTotal(){return sum(S.loadCos,function(c){var b=coBalance(c.id)
 
 /* ===== RENDER ===== */
 function render(){
+  if(S.role==='staff'&&['reports','settings','accounts','suppliers','loadcos','udhaar','expenses'].indexOf(S.tab)>-1)S.tab='home';
   var nav=$('navIn');[].forEach.call(nav.children,function(b){b.classList.toggle('on',b.getAttribute('data-tab')===S.tab);});
   updateBadge('repair',pendingRepairs().length);updateBadge('panels',S.panels.filter(function(p){return Number(p.qty)<=0;}).length);
   var v=$('view');
@@ -440,15 +441,18 @@ function empty(ic,title,msg){return '<div class="empty"><div class="ic">'+ic+'</
 function tile(cls,ic,lbl,val,sub){return '<div class="tile '+cls+'"><div class="lbl">'+ic+esc(lbl)+'</div><div class="val tnum">'+(typeof val==='number'?num(val):esc(val))+(sub?' <small>'+esc(sub)+'</small>':'')+'</div></div>';}
 
 function openMore(){
-  var b='<button class="menu-item" data-act="go" data-id="stock"><div class="mi">'+I.box+'</div><div><b>Stock — Accessories</b><span>Maal ki quantity, location aur rate</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers</b><span>Naam, number aur repair history</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="udhaar"><div class="mi">'+I.coin+'</div><div><b>Udhaar Khata</b><span>Kis se lena ya dena — slip ke sath</span></div></button>'+
+  var b='<button class="menu-item" data-act="go" data-id="stock"><div class="mi">'+I.box+'</div><div><b>Stock — Accessories</b><span>'+(isAdmin()?'Maal ki quantity, location aur rate':'Maal dhoondein (sirf dekhna)')+'</span></div></button>'+
+    '<button class="menu-item" data-act="go" data-id="customers"><div class="mi">'+I.users+'</div><div><b>Customers</b><span>Naam, number aur repair history</span></div></button>';
+  if(isAdmin()){
+    b+='<button class="menu-item" data-act="go" data-id="udhaar"><div class="mi">'+I.coin+'</div><div><b>Udhaar Khata</b><span>Kis se lena ya dena — slip ke sath</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="expenses"><div class="mi">'+I.coin+'</div><div><b>Kharchay (Expenses)</b><span>Kiraya, bijli waghera — net munafa ke liye</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="accounts"><div class="mi">'+I.wallet+'</div><div><b>Accounts</b><span>Har account alag — JazzCash, Easypaisa</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="suppliers"><div class="mi">'+I.truck+'</div><div><b>Supplier — Dena hai</b><span>Jin se maal liya, unka baqi aur slip</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="loadcos"><div class="mi">'+I.tower+'</div><div><b>Load Company / Rep</b><span>Representative aata hai — paisa, load, baqi</span></div></button>'+
     '<button class="menu-item" data-act="go" data-id="reports"><div class="mi">'+I.chart+'</div><div><b>Reports — Hisaab</b><span>Aaj, is mahine ya poora hisaab</span></div></button>'+
-    '<button class="menu-item" data-act="go" data-id="settings"><div class="mi">'+I.gear+'</div><div><b>Settings aur Backup</b><span>Shop profile, categories aur data backup</span></div></button>';
+    '<button class="menu-item" data-act="go" data-id="settings"><div class="mi">'+I.gear+'</div><div><b>Settings aur Backup</b><span>Shop profile, roles aur backup</span></div></button>';
+  }
+  b+='<button class="menu-item" data-act="lockNow"><div class="mi">'+I.gear+'</div><div><b>'+(adminPinVal()?'Lock / User badlein':'App Lock lagayein')+'</b><span>Abhi: '+(S.role==='staff'?'Staff (salesman)':'Admin')+'</span></div></button>';
   sheet('Menu',b,function(root){root.querySelectorAll('.menu-item').forEach(function(el){el.addEventListener('click',closeSheet);});});
 }
 
@@ -470,11 +474,10 @@ function viewHome(){
   if(coPend.length){
     h+='<div class="banner b">'+I.tower+'<div>Load company se lena baqi: <b>'+money(coPendingTotal())+'</b>. '+coPend.map(function(c){return esc(c.name);}).join(', ')+' — <a data-act="go" data-id="loadcos">kholein</a></div></div>';
   }
-  var udLena=totalUdhaarDue(),supDena=totalSupDue();
-  if(udLena>0||supDena>0){h+='<div class="tiles">'+tile('',I.coin,'Lena hai',money(udLena),'logon se')+tile('',I.truck,'Dena hai',money(supDena),'supplier ko')+'</div>';}
+  if(isAdmin()){var udLena=totalUdhaarDue(),supDena=totalSupDue();if(udLena>0||supDena>0){h+='<div class="tiles">'+tile('',I.coin,'Lena hai',money(udLena),'logon se')+tile('',I.truck,'Dena hai',money(supDena),'supplier ko')+'</div>';}}
   h+='<div class="btn-row"><button class="btn pri" data-act="go" data-id="sale">'+I.cart+' New Sale</button><button class="btn acc" data-act="go" data-id="service">'+I.coin+' Load / Transfer</button></div>';
   h+='<div class="btn-row"><button class="btn" data-act="go" data-id="panels">'+I.grid+' Model dhoondein</button><button class="btn" data-act="go" data-id="stock">'+I.box+' Stock</button></div>';
-  h+='<div class="btn-row"><button class="btn" data-act="go" data-id="customers">'+I.users+' Customers</button><button class="btn" data-act="go" data-id="udhaar">'+I.coin+' Udhaar Khata</button></div>';
+  h+='<div class="btn-row"><button class="btn" data-act="go" data-id="customers">'+I.users+' Customers</button>'+(isAdmin()?'<button class="btn" data-act="go" data-id="udhaar">'+I.coin+' Udhaar Khata</button>':'<button class="btn" data-act="go" data-id="repair">'+I.wrench+' Repair</button>')+'</div>';
   if(low.length){
     h+='<div class="section-t"><span>Low stock — jaldi mangwayein</span></div><div class="list">';
     low.slice(0,5).forEach(function(i){h+='<button class="row tap" data-act="editItem" data-id="'+i.id+'"><div class="main"><div class="ttl">'+esc(i.name)+'</div><div class="meta"><span class="pill loc">'+I.pin+esc(i.loc||'—')+'</span></div></div><div class="right"><div class="qty-big" style="color:var(--danger)">'+num(i.qty)+' <small>baqi</small></div></div></button>';});
@@ -527,7 +530,7 @@ function viewPanels(){
   if(S.panelBrand!=='all')list=list.filter(function(p){return p.brand===S.panelBrand;});
   if(S.panelQ){var q=S.panelQ.toLowerCase();list=list.filter(function(p){return (p.model||'').toLowerCase().indexOf(q)>-1||(p.brand||'').toLowerCase().indexOf(q)>-1||(p.loc||'').toLowerCase().indexOf(q)>-1;});}
   var h='<div class="view">';
-  h+='<div class="vhead"><div><h2>Models / Panels</h2><div class="sub">'+S.panels.length+' model · search kar ke available dekhein</div></div><button class="btn pri sm" data-act="newPanel">'+I.plus+' Naya</button></div>';
+  h+='<div class="vhead"><div><h2>Models / Panels</h2><div class="sub">'+S.panels.length+' model · search kar ke available dekhein</div></div>'+(isAdmin()?'<button class="btn pri sm" data-act="newPanel">'+I.plus+' Naya</button>':'')+'</div>';
   h+='<div class="search">'+I.search+'<input id="panelSearch" placeholder="Model likhein… jaise A12, Redmi 9" value="'+esc(S.panelQ)+'"></div>';
   h+='<div class="chips"><button class="chip'+(S.panelBrand==='all'?' on':'')+'" data-act="pbrand" data-id="all">Sab</button>';
   BRANDS.forEach(function(b){h+='<button class="chip'+(S.panelBrand===b?' on':'')+'" data-act="pbrand" data-id="'+esc(b)+'">'+esc(b)+'</button>';});
@@ -713,7 +716,7 @@ function viewStock(){
   var stockVal=sum(S.inv,function(i){return Number(i.qty)*Number(i.cost||0);});
   var cats=getCats();
   var h='<div class="view">';
-  h+='<div class="vhead"><div><h2>Stock (Maal)</h2><div class="sub">'+S.inv.length+' item · value '+money(stockVal)+'</div></div><button class="btn pri sm" data-act="newItem">'+I.plus+' Naya</button></div>';
+  h+='<div class="vhead"><div><h2>Stock (Maal)</h2><div class="sub">'+S.inv.length+' item'+(isAdmin()?' · value '+money(stockVal):'')+'</div></div>'+(isAdmin()?'<button class="btn pri sm" data-act="newItem">'+I.plus+' Naya</button>':'')+'</div>';
   h+='<div class="search">'+I.search+'<input id="stockSearch" placeholder="Item ya location dhoondein…" value="'+esc(S.stockQ)+'"></div>';
   h+='<div class="chips"><button class="chip'+(S.stockCat==='all'?' on':'')+'" data-act="cat" data-id="all">Sab</button>';
   cats.forEach(function(c){h+='<button class="chip'+(S.stockCat===c?' on':'')+'" data-act="cat" data-id="'+esc(c)+'">'+esc(c)+'</button>';});
@@ -1212,13 +1215,15 @@ function viewSettings(){
     '<div class="field"><label>Tagline (header)</label><input id="st_sub" value="'+esc(s.shopSub||'Mobile · Accessories · Easyload')+'"></div>'+
     '<div class="field"><label>Shop ka number</label><input id="st_phone" type="tel" inputmode="tel" value="'+esc(s.shopPhone||'')+'" placeholder="03xx-xxxxxxx"></div>'+
     '<button class="btn pri block" data-act="saveShop">'+I.check+' Save karein</button></div>';
-  h+='<div class="section-t"><span>App Lock (PIN)</span></div>';
+  var hasLock=s.adminPin||s.lockPin;
+  h+='<div class="section-t"><span>Admin / Staff Login</span></div>';
   h+='<div class="card pad list">';
-  if(s.lockPin)h+='<p class="hint" style="margin:0;color:var(--success)">🔒 App lock laga hua hai — kholte waqt PIN maangta hai.</p>';
-  h+='<div class="field"><label>'+(s.lockPin?'Naya PIN (badalne ke liye)':'PIN banayein (4–6 digit)')+'</label><input id="pinInp" type="tel" inputmode="numeric" maxlength="6" placeholder="e.g. 1234"></div>';
-  h+='<button class="btn pri block" data-act="setPin">'+I.check+' '+(s.lockPin?'PIN update karein':'Lock laga dein')+'</button>';
-  if(s.lockPin)h+='<button class="btn danger block" data-act="removePin">'+I.trash+' Lock hatayein</button>';
-  h+='<p class="hint">Yaad rahe: PIN bhoolne par data sirf Backup se wapas milega — is liye Backup zaroor rakhein.</p>';
+  if(hasLock)h+='<p class="hint" style="margin:0;color:var(--success)">🔒 Login laga hua hai.</p>';
+  h+='<div class="field"><label>Admin PIN — aap (sab kuch)'+(hasLock?' · badalne ke liye naya likhein':'')+'</label><input id="adminPinInp" type="tel" inputmode="numeric" maxlength="6" placeholder="4–6 digit"></div>';
+  h+='<div class="field"><label>Staff PIN — salesman (sirf Sale/Repair/Load)'+(s.staffPin?' · laga hua':'')+'</label><input id="staffPinInp" type="tel" inputmode="numeric" maxlength="6" placeholder="4–6 digit (optional)"></div>';
+  h+='<button class="btn pri block" data-act="saveLogin">'+I.check+' Login save karein</button>';
+  if(hasLock)h+='<button class="btn danger block" data-act="removeLogin">'+I.trash+' Login/Lock hatayein</button>';
+  h+='<p class="hint">Admin PIN set karte hi app lock ho jayegi. Staff sirf Sale, Repair aur Load kar sakega — cost, profit, reports, delete aur settings nahi. PIN bhoolne par data sirf Backup se milega.</p>';
   h+='</div>';
   h+='<div class="section-t"><span>Stock categories</span></div>';
   h+='<div class="card pad"><div class="wrap" style="margin-bottom:12px">';
@@ -1280,16 +1285,20 @@ function copyNum(n){if(navigator.clipboard&&navigator.clipboard.writeText){navig
 var pinBuf='';
 function renderPinDots(len,total){var d='';for(var i=0;i<(total||4);i++)d+='<i class="'+(i<len?'on':'')+'"></i>';var el=$('pinDots');if(el)el.innerHTML=d;}
 function buildKeypad(){var keys=['1','2','3','4','5','6','7','8','9','','0','back'];var el=$('keypad');if(el)el.innerHTML=keys.map(function(k){if(k==='')return '<span></span>';if(k==='back')return '<button data-key="back" aria-label="Back">⌫</button>';return '<button data-key="'+k+'">'+k+'</button>';}).join('');}
-function showLock(){pinBuf='';var pin=S.settings.lockPin||'';var t=$('lockTitle');if(t)t.textContent=shopName();var m=$('lockMsg');if(m)m.textContent='PIN daalein';renderPinDots(0,pin.length||4);buildKeypad();$('lockScreen').hidden=false;}
+function isAdmin(){return S.role!=='staff';}
+function adminPinVal(){return S.settings.adminPin||S.settings.lockPin||'';}
+function staffPinVal(){return S.settings.staffPin||'';}
+function pinMax(){var a=adminPinVal(),st=staffPinVal();return Math.max(a.length||4,st.length||0);}
+function unlockApp(role){S.role=role;$('lockScreen').hidden=true;pinBuf='';render();}
+function showLock(){pinBuf='';var t=$('lockTitle');if(t)t.textContent=shopName();var m=$('lockMsg');if(m)m.textContent='PIN daalein';renderPinDots(0,pinMax());buildKeypad();$('lockScreen').hidden=false;}
 function pinPress(key){
-  var pin=S.settings.lockPin||'';if(!pin)return;
-  if(key==='back'){pinBuf=pinBuf.slice(0,-1);renderPinDots(pinBuf.length,pin.length);return;}
-  if(pinBuf.length>=pin.length)return;
-  pinBuf+=key;renderPinDots(pinBuf.length,pin.length);
-  if(pinBuf.length===pin.length){
-    if(pinBuf===pin){$('lockScreen').hidden=true;pinBuf='';}
-    else{$('lockMsg').textContent='Ghalat PIN — dobara';var p=pin.length;pinBuf='';setTimeout(function(){renderPinDots(0,p);$('lockMsg').textContent='PIN daalein';},700);}
-  }
+  var a=adminPinVal(),st=staffPinVal();if(!a)return;var mx=pinMax();
+  if(key==='back'){pinBuf=pinBuf.slice(0,-1);renderPinDots(pinBuf.length,mx);return;}
+  if(pinBuf.length>=mx)return;
+  pinBuf+=key;renderPinDots(pinBuf.length,mx);
+  if(pinBuf===a){unlockApp('admin');return;}
+  if(st&&pinBuf===st){unlockApp('staff');return;}
+  if(pinBuf.length>=mx){$('lockMsg').textContent='Ghalat PIN — dobara';pinBuf='';setTimeout(function(){renderPinDots(0,mx);$('lockMsg').textContent='PIN daalein';},700);}
 }
 document.addEventListener('click',function(e){var k=e.target.closest('#keypad [data-key]');if(k)pinPress(k.getAttribute('data-key'));});
 function waNum(p){p=normPhone(p);if(!p)return '';if(p.indexOf('0')===0)p='92'+p.slice(1);else if(p.indexOf('92')!==0&&p.length===10)p='92'+p;return p;}
@@ -1349,6 +1358,10 @@ document.addEventListener('click',function(e){
   if(sl){var en=findLedger(sl.getAttribute('data-store'),sl.getAttribute('data-id'));if(en&&en.slip)showImage(en.slip);return;}
   var a=e.target.closest('[data-act]');if(!a)return;
   var act=a.getAttribute('data-act'),id=a.getAttribute('data-id');
+  if(S.role==='staff'){
+    if(/^(del|setPin|removePin|saveLogin|removeLogin|backup|restore|saveShop|addCat|addSvc|newItem|editItem|newPanel|editPanel)/.test(act)){toast('Ye sirf admin kar sakta hai','err');return;}
+    if(act==='go'&&['reports','settings','accounts','suppliers','loadcos','udhaar','expenses'].indexOf(id)>-1){toast('Ye sirf admin dekh sakta hai','err');return;}
+  }
   switch(act){
     case 'go': if(a.closest('.menu-item'))closeSheet(); goTab(id);break;
     case 'newItem': openItemForm(null);break;
@@ -1439,8 +1452,9 @@ document.addEventListener('click',function(e){
     case 'udAdd': sheet(a.getAttribute('data-type')==='gave'?'Udhaar diya':'Wapsi li',udTxForm(id,a.getAttribute('data-type')));break;
     case 'saveUdTx': saveUdTx(id,a.getAttribute('data-type'));break;
     case 'delUdTx': {var udp=a.getAttribute('data-pid');confirmSheet('Entry delete?','Ye entry delete ho jayegi.','Haan, delete',function(){removeDoc('udhaarTx',id).then(function(){closeSheet();toast('Delete','good');render();if(udp)openUd(udp);});});break;}
-    case 'setPin': {var v=($('pinInp').value||'').replace(/\D/g,'');if(v.length<4){toast('Kam az kam 4 digit','err');break;}saveSettings({lockPin:v}).then(function(){toast('App lock laga diya','good');render();});break;}
-    case 'removePin': confirmSheet('Lock hatayein?','App lock hat jayega — ab PIN nahi maangega.','Haan, hatayein',function(){saveSettings({lockPin:''}).then(function(){closeSheet();toast('Lock hata diya','good');render();});});break;
+    case 'lockNow': if(adminPinVal())showLock();else goTab('settings');break;
+    case 'saveLogin': {var ap=($('adminPinInp').value||'').replace(/\D/g,'');var sp=($('staffPinInp').value||'').replace(/\D/g,'');var cur=S.settings.adminPin||S.settings.lockPin||'';if(ap&&ap.length<4){toast('Admin PIN 4–6 digit','err');break;}if(sp&&sp.length<4){toast('Staff PIN 4–6 digit','err');break;}if(!ap&&!cur){toast('Pehle Admin PIN set karein','err');break;}var fap=ap||cur;if(sp&&sp===fap){toast('Admin aur Staff PIN alag hon','err');break;}saveSettings({adminPin:fap,staffPin:sp,lockPin:''}).then(function(){toast('Login save ho gaya','good');render();});break;}
+    case 'removeLogin': confirmSheet('Login hatayein?','App lock aur staff login dono hat jayenge.','Haan, hatayein',function(){saveSettings({adminPin:'',staffPin:'',lockPin:''}).then(function(){closeSheet();S.role='admin';toast('Hata diya','good');render();});});break;
     case 'newExp': sheet('Naya Kharcha',expForm(null));break;
     case 'openExp': openExp(id);break;
     case 'saveExp': saveExp(id);break;
